@@ -9,30 +9,35 @@
 # Function to import tab data and manipulate. Alternatively load R datafile
 import_save_dta <- function(dta_num=NA,
                             loadRDS=FALSE,
-                            old_dat17=FALSE,
+                            sav_dat=TRUE,
                             years_vector=dataset_years) {
   
   # Relevant names
   temp_year <- years_vector[dta_num]
-  temp_name <- paste0("lfsp_aj_",temp_year)
+  temp_name <- paste0("lfsh_aj_",temp_year)
   
   if (loadRDS==FALSE) {
-    temp_dta <- read.table(file = paste0(INPUT,"\\",dataset_ext_names[dta_num],".tab"),
-                           header = TRUE) 
+    if (sav_dat==FALSE) { #if tabulated data
+      temp_dta <- read.table(file = paste0(INPUT,"\\",dataset_ext_names[dta_num],".tab"),
+                             header = TRUE) 
+    }
+    else { #otherwise load SPSS datasets
+      temp_dta <-  read_sav(paste0(INPUT,"\\",dataset_ext_names[dta_num],".sav"))
+    }
     
     # Save relevant weight in own column 
     if (temp_year %in% c(2010:2011)) {
       temp_dta <- temp_dta %>%
-        mutate(weight_val = PWT14,
-               weight_var = "PWT14")
+        mutate(weight_val = PHHWT14,
+               weight_var = "PHHWT14")
     } else  if (temp_year %in% c(2012:2019)) {
       temp_dta <- temp_dta %>%
-        mutate(weight_val = PWT18,
-               weight_var = "PWT18")
+        mutate(weight_val = PHHWT18,
+               weight_var = "PHHWT18")
     } else if  (temp_year %in% c(2020:2022)) {
       temp_dta <- temp_dta %>%
-        mutate(weight_val = PWT22,
-               weight_var = "PWT22")
+        mutate(weight_val = PHHWT22,
+               weight_var = "PHHWT22")
     }
     
     # Save dataset year
@@ -42,23 +47,8 @@ import_save_dta <- function(dta_num=NA,
     # Save R data and allow loading
     saveRDS(temp_dta,
             file=paste0(RDATA,temp_name,".rds"))
-    
   } else { #otherwise load dataset directly
     temp_dta <- readRDS(file=paste0(RDATA,temp_name,".rds"))
-  }
- 
-  if (old_dat17==TRUE) {
-    # # To check against previous work, load previous dataset
-    if (temp_year==2017) {
-      
-      # Load the 2017 dataset from SPSS with PWT17
-      lfsp_aj_2017_pwt17 <-  read_sav(paste0(INPUT,"\\","lfsp_aj17_eul",".sav"))
-      
-      temp_dta <- lfsp_aj_2017_pwt17 %>%
-        mutate(weight_val = PWT17,
-               weight_var = "PWT17",
-               dta_year = temp_year)
-    }
   }
   
   temp_list <- list("dta"=temp_dta,"name"=temp_name,"year"=temp_year)
@@ -225,7 +215,7 @@ join_weights <- function(dta=NA,
   
   if (cons_method==TRUE) {
     # ALT - consistent with old method, merge all NA into non-London
-    lfsp_wt <- lfs_dataset_list_adj[[dta_nm]] %>%
+    lfsh_wt <- lfs_dataset_list_adj[[dta_nm]] %>%
       mutate(london_worker=case_when(london_worker=="London" ~ london_worker,
                                      TRUE ~ "Not London"),
              across({{agg_vars}}, ~ 9999)) %>%
@@ -236,7 +226,7 @@ join_weights <- function(dta=NA,
   }
   else {
     # Merge on the weights
-    lfsp_wt <- dta %>%
+    lfsh_wt <- dta %>%
       mutate(across({{agg_vars}}, ~ 9999)) %>%
       left_join(london_wt_dta,by=c("london_worker","ILODEFR")) %>%
       left_join(uk_wt_dta,by=c("ILODEFR")) %>%
@@ -248,7 +238,7 @@ join_weights <- function(dta=NA,
   
   
   # Only interested in quarter_response=="Yes" & ILODEFR==1, but keep all for data checking
-  lfsp_sum <- lfsp_wt %>% 
+  lfsh_sum <- lfsh_wt %>% 
     group_by(quarter_response,across(all_of(sum_group_vars)),across(all_of(default_group_vars)),across(all_of(nte_var)),across(all_of(agg_vars)),dta_year,uprate_weight_ldn,weight_var) %>% 
     summarise(wt_pop=sum(weight_val_ldn),
               unwt_pop=n()) %>% 
@@ -259,7 +249,7 @@ join_weights <- function(dta=NA,
     mutate(share_wt_nte_across_pop = wt_pop/sum(wt_pop)) %>% # to see how many of nte workers are in each sum_grouping
     ungroup()
   
-  temp_list <- list("lfsp_wt"=lfsp_wt,"lfsp_sum"=lfsp_sum)
+  temp_list <- list("lfsh_wt"=lfsh_wt,"lfsh_sum"=lfsh_sum)
   return(temp_list)
   
 }
