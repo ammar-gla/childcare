@@ -1,0 +1,9 @@
+In R, use the following commands (from https://martinctc.github.io/blog/working-with-spss-labels-in-r/):
+
+-glimpse() to see all variables with the first 20 or so rows, works well on giant SPSS datasets
+-haven::read_sav() to load SPSS datasets with all variable and value labels
+-attr(dta$var,"labels") will show the value labels, e.g. 'Male'=1
+-sjPlot::view_df() to show overview of dataset with labels and all in HTML.
+
+Note: variables with value labels are a unique class (haven_labelled) which you can check using class(dta$var)
+these cannot be interchanged with chr and num variables easily, e.g. in a case_when. 

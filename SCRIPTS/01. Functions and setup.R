@@ -115,10 +115,12 @@ recode_dta <- function(dta=NA) {
            nte_helper = "Any", # for aggregating everything in data
            # eve_work = EVENG, #these variables ask whether person works at least half of time in evening/night
            # night_work = NIGHT,
-           industry_job = case_when(INDS07M %in% c(18L,19L) ~ 18L, # group R arts and S other services, together
+           industry_job = case_when(INDS07M %in% c(18,19) ~ 18, # group R arts and S other services, together
                                     TRUE ~ INDS07M), 
            occ_job = !!sym(soc_var),
-           occ_job_two = floor(!!sym(soc_var_two)/100)) # forcing a two-digit SOC code 
+           occ_job_two = floor(!!sym(soc_var_two)/100), # forcing a two-digit SOC code 
+           FUSERIAL = (QUOTA*100000000000) + (WEEK*1000000000) + (W1YR*100000000) + (QRTR*10000000) + (ADD*100000) + (WAVFND*10000) + (HHLD*100) + FAMUNIT,
+           parent = case_when(RELHFU %in% c(1,2) & FDPCH19>0)) 
   
   
   

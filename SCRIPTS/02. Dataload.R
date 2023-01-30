@@ -53,7 +53,7 @@ df_labels <- bind_rows(l_df, .id = "dta_year") %>%
   select(dta_year,order(colnames(.)))
 
 # Export labels
-write.xlsx(df_labels,paste0(OTHERDATA,"\\lfsh_labels.xlsx"))
+#write.xlsx(df_labels,paste0(OTHERDATA,"\\lfsh_labels.xlsx"))
 
 # Adjust data
 lfs_dataset_list_adj <- lapply(lfs_dataset_list,recode_dta) 
