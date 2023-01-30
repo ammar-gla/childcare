@@ -20,7 +20,7 @@ for (y in 1:length(dataset_ext_names)) {
   
   # Produce a list with dataframe, name and year
   temp_list <- import_save_dta(dta_num = y,
-                  loadRDS = FALSE,
+                  loadRDS = TRUE,
                   sav_dat =  TRUE,
                   years_vector = dataset_years)
   
@@ -33,6 +33,8 @@ for (y in 1:length(dataset_ext_names)) {
   
 }
 
+rm(y)
+
 # Give years as names to the vector
 names(lfs_dataset_nm) <- as.character(dataset_years)
 
@@ -44,7 +46,19 @@ names(lfs_dataset_nm) <- as.character(dataset_years)
 
 lfs_dataset_list <- setNames(lapply(lfs_dataset_nm, get),lfs_dataset_nm)
 
+
+# Create data frame with labels of variables
+l_df <- lapply(lfs_dataset_nm,output_labels)
+df_labels <- bind_rows(l_df, .id = "dta_year") %>% 
+  select(dta_year,order(colnames(.)))
+
+# Export labels
+write.xlsx(df_labels,paste0(OTHERDATA,"\\lfsh_labels.xlsx"))
+
+# Adjust data
 lfs_dataset_list_adj <- lapply(lfs_dataset_list,recode_dta) 
+
+
 
 
 #.............................................................................

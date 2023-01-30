@@ -254,6 +254,30 @@ join_weights <- function(dta=NA,
   
 }
 
+#.............................................................................
+#### Utility functions ----
+#.............................................................................
+
+# Produce a dataframe with all variables and their labels across datasets
+
+output_labels <- function(dta_nm=NULL) {
+  
+  # Extract year
+  dta_year <- as.numeric(names(lfs_dataset_nm)[lfs_dataset_nm==dta_nm])
+  
+  # Remove user-made variables
+  dta <- lfs_dataset_list[[dta_nm]] %>% select(-weight_var,-dta_year)
+  
+  # Create list with labels
+  lablist <- lapply(dta, attr, "label")
+  
+  # Create dataframe of list
+  labdf <- as.data.frame(lablist, stringsAsFactors = F) 
+  
+  return(labdf)
+  
+}
+
 # 
 # test <- function(vars=c("london_worker","nte_worker")) {
 #   
