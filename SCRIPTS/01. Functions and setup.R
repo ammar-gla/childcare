@@ -65,9 +65,8 @@ recode_dta <- function(dta=NA) {
     group_by(dta_year) %>% 
     filter(row_number()==1) %>% 
     pull(dta_year)
-  
-  if (dta_year_check>2020) soc_var <- "SC20MMJ" else soc_var <- "SC10MMJ"
-  if (dta_year_check>2020) soc_var_two <- "SOC20M" else soc_var_two <- "SOC10M"  # for detailed occ
+
+  if (dta_year_check>2020) soc_var <- "SOC20M" else soc_var <- "SOC10M"  # for detailed occ
   
   # Change data
   dta_adj <- dta %>% 
@@ -117,10 +116,11 @@ recode_dta <- function(dta=NA) {
            # night_work = NIGHT,
            industry_job = case_when(INDS07M %in% c(18,19) ~ 18, # group R arts and S other services, together
                                     TRUE ~ INDS07M), 
-           occ_job = !!sym(soc_var),
-           occ_job_two = floor(!!sym(soc_var_two)/100), # forcing a two-digit SOC code 
-           FUSERIAL = (QUOTA*100000000000) + (WEEK*1000000000) + (W1YR*100000000) + (QRTR*10000000) + (ADD*100000) + (WAVFND*10000) + (HHLD*100) + FAMUNIT,
-           parent = case_when(RELHFU %in% c(1,2) & FDPCH19>0)) 
+           occ_job = floor(!!sym(soc_var)/1000), # forcing a one-digit SOC code
+           occ_job_two = floor(!!sym(soc_var)/100), # forcing a two-digit SOC code 
+           fam_id = HSERIALP *100 + FAMUNIT, #unique identifier for each family unit
+           parent = case_when(RELHFU %in% c(1,2) & FDPCH19>0 ~ 1,
+                              TRUE ~ 0)) 
   
   
   
@@ -279,6 +279,34 @@ output_labels <- function(dta_nm=NULL) {
   return(labdf)
   
 }
+
+# Create new columns using value labels of existing ones
+convert_to_label <- function(dta=NULL,
+                             var_vec=c()) {
+  dta_convert <- dta %>% 
+    mutate(across(all_of(var_vec),sjlabelled::as_label,.names='{col}_label'))
+  
+  return(dta_convert)
+}
+
+
+# Collapse data to summarise by demography, using weights
+collapse_func <- function(dta=NULL,
+                          demog_var=NULL) {
+  
+  dta_collapse <- dta %>% 
+    filter(between(AGE,16,64)) %>% 
+    group_by({{demog_var}},GOVTOF,parent,ILODEFR) %>% 
+    summarise(people = sum(weight_val)) %>% 
+    group_by({{demog_var}},GOVTOF,parent) %>% 
+    mutate(pct_employed = people/sum(people)) %>% #ungroup labour status
+    filter(ILODEFR==1) # only employed people
+  
+  
+  return(dta_collapse)
+}
+
+
 
 # 
 # test <- function(vars=c("london_worker","nte_worker")) {
