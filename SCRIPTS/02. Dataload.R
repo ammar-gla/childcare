@@ -3,18 +3,19 @@
 #_____________________________________________________________________________
 
 # Clear out existing lists if taking memory
-lfs_dataset_list <- list()
-lfs_dataset_list_adj <- list()
+dataset_list <- list()
+dataset_list_adj <- list()
 
-# Load the LFS datatets
-dataset_ext_names <- c("lfsh_aj18_eul","lfsh_aj19_eul","lfsh_aj20_eul_phhwt22","lfsh_aj21_eul_phhwt22","lfsh_aj22_eul_phhwt22")
-dataset_years <- c(2018:2022)
+# Turns out we need APS datasets, not LFS
+#dataset_ext_names <- c("lfsh_aj18_eul","lfsh_aj19_eul","lfsh_aj20_eul_phhwt22","lfsh_aj21_eul_phhwt22","lfsh_aj22_eul_phhwt22")
+dataset_ext_names <- c("apsh_jd17_eul","apsh_jd18_eul","apsh_jd19_eul","apsh_jd20_eul_phhwta22","apsh_jd21_eul_phhwta22")
+dataset_years <- c(2017:2021)
 
 #.............................................................................
 #### Load LFS stats, automatically clean and save ----
 #.............................................................................
 
-lfs_dataset_nm <- c()
+dataset_nm <- c()
 
 for (y in 1:length(dataset_ext_names)) {
   
@@ -22,11 +23,12 @@ for (y in 1:length(dataset_ext_names)) {
   temp_list <- import_save_dta(dta_num = y,
                   loadRDS = TRUE,
                   sav_dat =  TRUE,
+                  aps_lfs = "APS",
                   years_vector = dataset_years)
   
   # Create dataframe with name and save its name
   assign(temp_list[["name"]],temp_list[["dta"]])
-  lfs_dataset_nm <- c(lfs_dataset_nm,temp_list[["name"]])
+  dataset_nm <- c(dataset_nm,temp_list[["name"]])
 
   # Delete list
   rm(temp_list)
@@ -36,7 +38,7 @@ for (y in 1:length(dataset_ext_names)) {
 rm(y)
 
 # Give years as names to the vector
-names(lfs_dataset_nm) <- as.character(dataset_years)
+names(dataset_nm) <- as.character(dataset_years)
 
 #.............................................................................
 #### Adjustments to data ----
@@ -44,28 +46,30 @@ names(lfs_dataset_nm) <- as.character(dataset_years)
 
 # Create list with datasets, including their name
 
-lfs_dataset_list <- setNames(lapply(lfs_dataset_nm, get),lfs_dataset_nm)
+dataset_list <- setNames(lapply(dataset_nm, get),dataset_nm)
 
-# Remove individual datasets to save memory
-rm(list=lfs_dataset_nm)
+
 
 # Create data frame with labels of variables
-l_df <- lapply(lfs_dataset_nm,output_labels)
+l_df <- lapply(dataset_nm,output_labels)
 df_labels <- bind_rows(l_df, .id = "dta_year") %>% 
   select(dta_year,order(colnames(.)))
 
 # Export labels
-#write.xlsx(df_labels,paste0(OTHERDATA,"\\lfsh_labels.xlsx"))
+#write.xlsx(df_labels,paste0(OTHERDATA,"\\apsh_labels.xlsx"))
 
 # Create overview HTMLs of the datasets
 #sjPlot::view_df(lfsh_aj_2018,show.prc = T)
+
+# Remove individual datasets to save memory
+rm(list=dataset_nm)
 
 # Define which variables to keep for analysis to save memory - and vars to transform to labels
 label_var_vec <- c("SEX","GOVTOF","ILODEFR","ETHUKEUL","FUTYPE6")
 analysis_var_vec <- c("parent","fam_id","AGE","weight_val")
 
 # Replace variables with their value labels, then remove all value labels from the datasets to allow easy mutation of variables
-lfs_dataset_list_adj <- lapply(lfs_dataset_list,convert_to_label,var_vec=label_var_vec) %>% 
+dataset_list_adj <- lapply(dataset_list,convert_to_label,var_vec=label_var_vec) %>% 
   lapply(haven::zap_labels) %>% 
   lapply(recode_dta) %>% 
   lapply(select,c(analysis_var_vec,label_var_vec,paste(label_var_vec,"_label",sep="")))
@@ -76,7 +80,7 @@ lfs_dataset_list_adj <- lapply(lfs_dataset_list,convert_to_label,var_vec=label_v
 #.............................................................................
 
 
-lfs_sum_list <- lapply(lfs_dataset_list_adj,collapse_func,demog_var="SEX_label")
+lfs_sum_list <- lapply(dataset_list_adj,collapse_func,demog_var="SEX_label")
 
 
 

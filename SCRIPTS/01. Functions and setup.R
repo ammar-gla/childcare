@@ -8,9 +8,14 @@
 
 # Function to import tab data and manipulate. Alternatively load R datafile
 import_save_dta <- function(dta_num=NA,
+                            aps_lfs=NA,
                             loadRDS=FALSE,
                             sav_dat=TRUE,
                             years_vector=dataset_years) {
+  
+  
+  checkmate::assert_choice(aps_lfs, choices = c("APS","LFS"))
+  
   
   # Relevant names
   temp_year <- years_vector[dta_num]
@@ -26,18 +31,30 @@ import_save_dta <- function(dta_num=NA,
     }
     
     # Save relevant weight in own column 
-    if (temp_year %in% c(2010:2011)) {
-      temp_dta <- temp_dta %>%
-        mutate(weight_val = PHHWT14,
-               weight_var = "PHHWT14")
-    } else  if (temp_year %in% c(2012:2019)) {
-      temp_dta <- temp_dta %>%
-        mutate(weight_val = PHHWT18,
-               weight_var = "PHHWT18")
-    } else if  (temp_year %in% c(2020:2022)) {
-      temp_dta <- temp_dta %>%
-        mutate(weight_val = PHHWT22,
-               weight_var = "PHHWT22")
+    if (aps_lfs=="APS") {
+      if (temp_year %in% c(2012:2019)) {
+        temp_dta <- temp_dta %>%
+          mutate(weight_val = PHHWTA18,
+                 weight_var = "PHHWTA18")
+      } else if (temp_year %in% c(2020:2022)) {
+        temp_dta <- temp_dta %>%
+          mutate(weight_val = PHHWTA22,
+                 weight_var = "PHHWTA22")
+      }
+    } else if (aps_lfs=="LFS") {
+      if (temp_year %in% c(2010:2011)) {
+        temp_dta <- temp_dta %>%
+          mutate(weight_val = PHHWT14,
+                 weight_var = "PHHWT14")
+      } else  if (temp_year %in% c(2012:2022)) {
+        temp_dta <- temp_dta %>%
+          mutate(weight_val = PHHWT18,
+                 weight_var = "PHHWT18")
+      } else if  (temp_year %in% c(2020:2022)) {
+        temp_dta <- temp_dta %>%
+          mutate(weight_val = PHHWT22,
+                 weight_var = "PHHWT22")
+      }
     }
     
     # Save dataset year
@@ -217,7 +234,7 @@ join_weights <- function(dta=NA,
   
   if (cons_method==TRUE) {
     # ALT - consistent with old method, merge all NA into non-London
-    lfsh_wt <- lfs_dataset_list_adj[[dta_nm]] %>%
+    lfsh_wt <- dataset_list_adj[[dta_nm]] %>%
       mutate(london_worker=case_when(london_worker=="London" ~ london_worker,
                                      TRUE ~ "Not London"),
              across({{agg_vars}}, ~ 9999)) %>%
@@ -265,10 +282,10 @@ join_weights <- function(dta=NA,
 output_labels <- function(dta_nm=NULL) {
   
   # Extract year
-  dta_year <- as.numeric(names(lfs_dataset_nm)[lfs_dataset_nm==dta_nm])
+  dta_year <- as.numeric(names(dataset_nm)[dataset_nm==dta_nm])
   
   # Remove user-made variables
-  dta <- lfs_dataset_list[[dta_nm]] %>% select(-weight_var,-dta_year)
+  dta <- dataset_list[[dta_nm]] %>% select(-weight_var,-dta_year)
   
   # Create list with labels
   lablist <- lapply(dta, attr, "label")
@@ -299,13 +316,13 @@ collapse_func <- function(dta=NULL,
     filter(between(AGE,16,64)) %>% 
     group_by(!!sym(demog_var),across(all_of(group_vec)),ILODEFR) %>% 
     summarise(people = sum(weight_val)) %>% 
-    pivot_wider(id_cols = across(all_of(c(group_vec,demog_var))),
+    pivot_wider(id_cols = all_of(c(group_vec,demog_var)),
                 names_from = ILODEFR,
                 values_from = people,
                 names_prefix = "people_ILO_") %>% # pivot to have ILOs in columns
     mutate(people_tot = rowSums(across(starts_with("people_ILO"))),
            pct_employed = people_ILO_1/people_tot, # total % employed
-           employ_rate = people_ILO_1(people_ILO_1+people_ILO_2)) # only using econ. active people
+           employ_rate = people_ILO_1/(people_ILO_1+people_ILO_2)) # only using econ. active people
   
   
   return(dta_collapse)
