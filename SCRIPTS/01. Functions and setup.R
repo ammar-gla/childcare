@@ -118,7 +118,7 @@ recode_dta <- function(dta=NA) {
                                     TRUE ~ INDS07M), 
            occ_job = floor(!!sym(soc_var)/1000), # forcing a one-digit SOC code
            occ_job_two = floor(!!sym(soc_var)/100), # forcing a two-digit SOC code 
-           fam_id = HSERIALP *100 + FAMUNIT, #unique identifier for each family unit
+           fam_id = as.numeric(HSERIALP) *100 + FAMUNIT, #unique identifier for each family unit
            parent = case_when(RELHFU %in% c(1,2) & FDPCH19>0 ~ 1,
                               TRUE ~ 0)) 
   
@@ -292,15 +292,20 @@ convert_to_label <- function(dta=NULL,
 
 # Collapse data to summarise by demography, using weights
 collapse_func <- function(dta=NULL,
+                          group_vec=c("GOVTOF_label","parent"),
                           demog_var=NULL) {
   
   dta_collapse <- dta %>% 
     filter(between(AGE,16,64)) %>% 
-    group_by({{demog_var}},GOVTOF,parent,ILODEFR) %>% 
+    group_by(!!sym(demog_var),across(all_of(group_vec)),ILODEFR) %>% 
     summarise(people = sum(weight_val)) %>% 
-    group_by({{demog_var}},GOVTOF,parent) %>% 
-    mutate(pct_employed = people/sum(people)) %>% #ungroup labour status
-    filter(ILODEFR==1) # only employed people
+    pivot_wider(id_cols = across(all_of(c(group_vec,demog_var))),
+                names_from = ILODEFR,
+                values_from = people,
+                names_prefix = "people_ILO_") %>% # pivot to have ILOs in columns
+    mutate(people_tot = rowSums(across(starts_with("people_ILO"))),
+           pct_employed = people_ILO_1/people_tot, # total % employed
+           employ_rate = people_ILO_1(people_ILO_1+people_ILO_2)) # only using econ. active people
   
   
   return(dta_collapse)
