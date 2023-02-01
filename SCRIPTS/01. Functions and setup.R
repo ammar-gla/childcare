@@ -11,23 +11,23 @@ import_save_dta <- function(dta_num=NA,
                             aps_lfs=NA,
                             loadRDS=FALSE,
                             sav_dat=TRUE,
-                            years_vector=dataset_years) {
+                            dataset_nm_vector=NULL) {
   
   
   checkmate::assert_choice(aps_lfs, choices = c("APS","LFS"))
   
   
   # Relevant names
-  temp_year <- years_vector[dta_num]
-  temp_name <- paste0("lfsh_aj_",temp_year)
+  temp_year <- paste0("20",gsub("(\\w{4}_\\w{2})(\\d{2})(.*)","\\2", dataset_nm_vector[dta_num]))
+  temp_name <- regmatches(dataset_nm_vector[dta_num],regexpr("\\w{4}_\\w{2}\\d{2}",dataset_nm_vector[dta_num]))
   
   if (loadRDS==FALSE) {
     if (sav_dat==FALSE) { #if tabulated data
-      temp_dta <- read.table(file = paste0(INPUT,"\\",dataset_ext_names[dta_num],".tab"),
+      temp_dta <- read.table(file = paste0(INPUT,"\\",dataset_nm_vector[dta_num],".tab"),
                              header = TRUE) 
     }
     else { #otherwise load SPSS datasets
-      temp_dta <-  read_sav(paste0(INPUT,"\\",dataset_ext_names[dta_num],".sav"))
+      temp_dta <-  read_sav(paste0(INPUT,"\\",dataset_nm_vector[dta_num],".sav"))
     }
     
     # Save relevant weight in own column 
@@ -46,7 +46,7 @@ import_save_dta <- function(dta_num=NA,
         temp_dta <- temp_dta %>%
           mutate(weight_val = PHHWT14,
                  weight_var = "PHHWT14")
-      } else  if (temp_year %in% c(2012:2022)) {
+      } else  if (temp_year %in% c(2012:2019)) {
         temp_dta <- temp_dta %>%
           mutate(weight_val = PHHWT18,
                  weight_var = "PHHWT18")
