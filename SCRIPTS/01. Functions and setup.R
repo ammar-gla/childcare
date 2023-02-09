@@ -14,7 +14,7 @@ import_save_dta <- function(dta_num=NA,
                             dataset_nm_vector=NULL) {
   
   
-  checkmate::assert_choice(aps_lfs, choices = c("APS","LFS"))
+  checkmate::assert_choice(str_to_lower(aps_lfs), choices = c("aps","lfs"))
   
   
   # Relevant names
@@ -31,7 +31,7 @@ import_save_dta <- function(dta_num=NA,
     }
     
     # Save relevant weight in own column 
-    if (aps_lfs=="APS") {
+    if (str_to_lower(aps_lfs)=="aps") {
       if (temp_year %in% c(2012:2019)) {
         temp_dta <- temp_dta %>%
           mutate(weight_val = PHHWTA18,
@@ -41,7 +41,7 @@ import_save_dta <- function(dta_num=NA,
           mutate(weight_val = PHHWTA22,
                  weight_var = "PHHWTA22")
       }
-    } else if (aps_lfs=="LFS") {
+    } else if (str_to_lower(aps_lfs)=="lfs") {
       if (temp_year %in% c(2010:2011)) {
         temp_dta <- temp_dta %>%
           mutate(weight_val = PHHWT14,
@@ -73,8 +73,6 @@ import_save_dta <- function(dta_num=NA,
 }
 
 # Function to adjust the data for our use, inspired by previous SPS code
-## Missing variables:
-## NATOX, CRYOX7
 recode_dta <- function(dta=NA) {
   
   # Check year and set SOC var accordingly
@@ -87,56 +85,21 @@ recode_dta <- function(dta=NA) {
   
   # Change data
   dta_adj <- dta %>% 
-    mutate(london_worker = case_when(GORWKR==8 ~ "London",
-                                     GORWKR==-8 ~ "No answer",
-                                     GORWKR==-9 ~ "NA",
-                                     is.na(GORWKR) ~ "NA",
-                                     TRUE ~ "Not London"),
-           london_resident = case_when(GOVTOF2==8 ~ "London",
-                                       TRUE ~ "Not London"),
-           age_band = case_when(AGE <16 ~ "<16",
-                                inrange(AGE,16,34) ~ "16-34",
-                                inrange(AGE,35,54) ~ "35-54",
-                                AGE>54 ~ "55+"),
-           ethnicity = case_when(ETHUKEUL==1 ~ "White",
+    mutate(ethnicity = case_when(ETHUKEUL==1 ~ "White",
                                  ETHUKEUL %in% c(2,3,4,5,6,7,8,9) ~ "BAME",
                                  ETHUKEUL==-8 ~ "No answer",
                                  ETHUKEUL==-9 ~ "NA"),
            quarter_response = case_when(IOUTCOME %in% c(1,2) ~ "Yes",
                                         IOUTCOME == 6 ~ "No",
                                         TRUE ~ "NA"),
-           nte_worker = case_when(USUWRK2==1 | USUWRK3==1 ~ "Yes",
-                                  USUWRK2== 2 & USUWRK3==2 ~ "No",
-                                  USUWRK2== -8 & USUWRK3==-8 ~ "No answer",
-                                  USUWRK2== -9 & USUWRK3==-9 ~ "NA",
-                                  TRUE ~ "NA"),
-           nte_worker_detail = case_when(USUWRK2==1 & USUWRK3==1 ~ "Both",
-                                         USUWRK2==1 & USUWRK3!=1 ~ "Evening",
-                                         USUWRK2!=1 & USUWRK3==1 ~ "Night",
-                                         USUWRK2== 2 & USUWRK3==2 ~ "No",
-                                         USUWRK2== -8 & USUWRK3==-8 ~ "No answer",
-                                         USUWRK2== -9 & USUWRK3==-9 ~ "NA",
-                                         TRUE ~ "NA"),
-           nte_combi_worker = case_when(USUWRK1==1 & USUWRK2==1 & USUWRK3==1 ~ "D-E-N",
-                                        USUWRK1==1 & USUWRK2==1 & USUWRK3!=1 ~ "D-E",
-                                        USUWRK1==1 &  USUWRK2!=1 & USUWRK3==1 ~ "D-N",
-                                        USUWRK1!=1 &  USUWRK2==1 & USUWRK3==1 ~ "E-N",
-                                        USUWRK1==1 & USUWRK2!=1 & USUWRK3!=1 ~ "D",
-                                        USUWRK1!=1 & USUWRK2==1 & USUWRK3!=1 ~ "E",
-                                        USUWRK1!=1 & USUWRK2!=1 & USUWRK3==1 ~ "N",
-                                        USUWRK1==2 &  USUWRK2== 2 & USUWRK3==2 ~ "None",
-                                        USUWRK1==-8 &  USUWRK2== -8 & USUWRK3==-8 ~ "No answer",
-                                        USUWRK1==-9 &  USUWRK2== -9 & USUWRK3==-9 ~ "NA",
-                                         TRUE ~ "NA"),
-           nte_helper = "Any", # for aggregating everything in data
-           # eve_work = EVENG, #these variables ask whether person works at least half of time in evening/night
-           # night_work = NIGHT,
            industry_job = case_when(INDS07M %in% c(18,19) ~ 18, # group R arts and S other services, together
                                     TRUE ~ INDS07M), 
-           occ_job = floor(!!sym(soc_var)/1000), # forcing a one-digit SOC code
-           occ_job_two = floor(!!sym(soc_var)/100), # forcing a two-digit SOC code 
-           fam_id = as.numeric(HSERIALP) *100 + FAMUNIT, #unique identifier for each family unit
+           # occ_job = floor(!!sym(soc_var)/1000), # forcing a one-digit SOC code
+           # occ_job_two = floor(!!sym(soc_var)/100), # forcing a two-digit SOC code 
+           fam_id = as.numeric(HSERIALP) *100 + FAMUNIT, #unique identifier for each family unit, ONLY EXISTS IN LFS!
            parent = case_when(RELHFU %in% c(1,2) & FDPCH19>0 ~ 1,
+                              TRUE ~ 0),
+           employed=case_when(ILODEFR==1 ~ 1,
                               TRUE ~ 0)) 
   
   
@@ -321,8 +284,7 @@ collapse_func <- function(dta=NULL,
                 values_from = people,
                 names_prefix = "people_ILO_") %>% # pivot to have ILOs in columns
     mutate(people_tot = rowSums(across(starts_with("people_ILO"))),
-           pct_employed = people_ILO_1/people_tot, # total % employed
-           employ_rate = people_ILO_1/(people_ILO_1+people_ILO_2)) # only using econ. active people
+           pct_employed = people_ILO_1/people_tot) # total % employed) 
   
   
   return(dta_collapse)
