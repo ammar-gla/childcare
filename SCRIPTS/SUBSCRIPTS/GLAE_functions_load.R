@@ -249,6 +249,21 @@ correct_facets <- function(chart,max_fac_num=9) {
   chart <<- chart_temp
 }
 
+
+# Helper function to easily pass objects within formula
+## used e.g. for passing formulas to survey package
+formula_helper <- function(outcome_var=NULL,
+                           formula_vars=NULL) {
+  
+  checkmate::assert_vector(formula_vars)
+  
+  f <- as.formula(paste(outcome_var, 
+                        paste(formula_vars, collapse = " + "), 
+                        sep = " ~ "))
+  
+  return(f)
+}
+
 #.............................................................................
 ### Charting functions ----
 #.............................................................................
