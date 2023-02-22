@@ -85,10 +85,10 @@ recode_dta <- function(dta=NA) {
   
   # Change data
   dta_adj <- dta %>% 
-    mutate(ethnicity = case_when(ETHUKEUL==1 ~ "White",
+    mutate(ethnicity = case_when(ETHUKEUL == 1 ~ "White",
                                  ETHUKEUL %in% c(2,3,4,5,6,7,8,9) ~ "BAME",
-                                 ETHUKEUL==-8 ~ "No answer",
-                                 ETHUKEUL==-9 ~ "NA"),
+                                 ETHUKEUL == -8 ~ "No answer",
+                                 ETHUKEUL == -9 ~ "NA"),
            quarter_response = case_when(IOUTCOME %in% c(1,2) ~ "Yes",
                                         IOUTCOME == 6 ~ "No",
                                         TRUE ~ "NA"),
@@ -100,7 +100,13 @@ recode_dta <- function(dta=NA) {
            parent = case_when(RELHFU %in% c(1,2) & FDPCH19>0 ~ 1,
                               TRUE ~ 0),
            employed=case_when(ILODEFR==1 ~ 1,
-                              TRUE ~ 0)) 
+                              TRUE ~ 0),
+           adult = case_when(AGE>=16 ~ 1,
+                             TRUE ~ 0),
+           adult1664 = case_when(between(AGE,16,64) ~ 1,
+                             TRUE ~ 0),
+           london_resident = case_when(GOVTOF == 8 ~ 1,
+                                       TRUE ~ 0)) 
   
   
   

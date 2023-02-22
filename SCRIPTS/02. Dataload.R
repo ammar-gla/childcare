@@ -69,14 +69,14 @@ df_labels <- bind_rows(l_df, .id = "dta_year") %>%
 #write.xlsx(df_labels,paste0(OTHERDATA,"\\apsh_labels.xlsx"))
 
 # Create overview HTMLs of the datasets
-#sjPlot::view_df(apsh_jd18,show.prc = T, file = paste0(OTHERDATA,"APS_overview_labels_2018.html"))
+sjPlot::view_df(lfsh_aj22,show.prc = T, file = paste0(OTHERDATA,"LFS_overview_labels_2022.html"))
 
 # Remove individual datasets to save memory
 rm(list=dataset_nm)
 
 # Define which variables to keep for analysis to save memory - and vars to transform to labels
 label_var_vec <- c("SEX","GOVTOF","ILODEFR","ETHUKEUL","FUTYPE6")
-analysis_var_vec <- c("parent","fam_id","AGE","weight_val","HSERIALP")
+analysis_var_vec <- c("parent","fam_id","AGE","adult1664","weight_val","HSERIALP","employed","london_resident")
 
 # Replace variables with their value labels, then remove all value labels from the datasets to allow easy mutation of variables
 dataset_list_adj <- lapply(dataset_list,convert_to_label,var_vec=label_var_vec) %>% 
@@ -93,7 +93,10 @@ dataset_list_adj <- lapply(dataset_list,convert_to_label,var_vec=label_var_vec) 
 lfs_sum_list <- lapply(dataset_list_adj,collapse_func,demog_var="SEX_label")
 
 # Set up survey design within list
-survey_info <- lapply(X=dataset_list_adj,
+## The id variable is household, where clustering happens in survey
+## Strata is lowest possible geography, for EUL data is region
+## nest set to TRUE to detect if primary sampling units appear in multiple strate (they should not)
+survey_design_full <- lapply(X=dataset_list_adj,
                       FUN= function(dta,id,strata,weights,nest) 
                         svydesign(data=dta,id=id,strata=strata,weights=weights,nest=nest),
                       id   = ~HSERIALP, #clustered at household, NOT family unit
@@ -101,42 +104,16 @@ survey_info <- lapply(X=dataset_list_adj,
                       weights = ~weight_val, 
                       nest  = TRUE)
 
-# Calculate 
-output <- lapply(X=survey_info,
+# Subset to only adults (aged 16+) - do within survey package to maintain error calculation
+survey_design_adults <- lapply(survey_design_full,subset,subset=adult1664==1)
+
+# Calculate the share of people who are employed, i.e. mean of employment binary
+output <- lapply(X=survey_design_adults,
                  FUN= function(design,formula,by,com,keep.var) 
                    svyby(design=design,formula=formula,by=by,FUN=com,keep.var=keep.var),
                  formula = ~employed, 
-                 by    = ~parent, 
-                 com   = svyratio, 
+                 by    = ~parent + london_resident, 
+                 com   = svymean, 
                  keep.var = TRUE)
 
-
-# #.............................................................................
-# #### Export tables to Excel ----
-# #.............................................................................
-# 
-# 
-# # Headline figures
-# lfsh_aj_head <- lfsh_aj_full %>% 
-#   filter(london_worker %in% c("London","Not London") & quarter_response=="Yes" & ILODEFR==1 &
-#            industry_job==9999  & occ_job==9999  & occ_job_two==9999) %>% 
-#   mutate(id=paste(dta_year,london_worker,nte_worker,sep = "_")) %>% 
-#   select(id,dta_year,weight_var,london_worker,nte_worker,unwt_pop,wt_pop,share_unwt_pop,share_wt_pop)
-# 
-# 
-# 
-# # -- Open workbook, delete existing data, and save new
-# wb <- loadWorkbook(paste0(DATA_OUT,"/London at Night data.xlsx"))
-# 
-# data_sheets <- c("nte_headline","nte_ind","nte_occ","nte_occ_two","nte_data","nte_ind_detail","nte_occ_detail",
-#                  "nte_detail_headline","nte_combi_headline","nte_shft_headline","all_headline","all_ind","all_occ")
-# 
-# for (sht in data_sheets) {
-#   deleteData(wb , sheet = sht,cols = 1:20, rows = 1:10000, gridExpand = TRUE)
-# }
-# 
-# writeData(wb, sheet = "nte_headline",lfsh_aj_head, colNames = T)
-# writeData(wb, sheet = "nte_ind",lfsh_aj_ind, colNames = T)
-# writeData(wb, sheet = "nte_occ",lfsh_aj_occ, colNames = T)
-
-# saveWorkbook(wb,paste0(DATA_OUT,"/London at Night data.xlsx"),overwrite = T)
+output_df <- bind_rows(output,.id="dataset")
