@@ -82,7 +82,40 @@ for(i in 1:length(analysis_byvars)) {
 #.............................................................................
 
 # Delist the results and combine all into handy data frame for export
-employ_rates_df <- bind_rows(lapply(employ_rates_list,bind_rows,.id="dataset"),.id="var_set")
+analysis_byvars_vec <- unname(unlist(analysis_byvars)) # due to odd behaviour from across(), need to remove names
 
-write.xlsx(output_df,paste0(DATA_OUT,"\\employment_rates.xlsx"),sheetName="results")
+employ_rates_df <- bind_rows(lapply(employ_rates_list,bind_rows,.id="dataset"),.id="var_set") %>%  
+  unite("byvar_characteristic",all_of(analysis_byvars_vec), sep='_',na.rm = TRUE,remove = FALSE) %>% 
+  mutate(id = paste0(var_set,"_",dataset,"_",parent,"_",london_resident,"_",byvar_characteristic)) %>% 
+  relocate(id)
+
+# Export into workbook with formatted sheets
+wbname <- "Parental employment rates.xlsx"
+wb <- loadWorkbook(paste0(DATA_OUT,wbname))
+
+data_sheets <- c("emp_rates_data")
+
+# Check if sheets exists and delete data, otherwise create sheet
+for (sht in data_sheets) {
+  
+  # Check if exists
+  for (actual_sheets in names(wb)){
+    sht_exists <- FALSE
+    if (actual_sheets == sht) {
+      sht_exists <- TRUE
+    }
+  }
+  
+  # If not exist
+  if (sht_exists != TRUE) {
+    addWorksheet(wb, sht, tabColour = "black")
+  } else {
+    deleteData(wb , sheet = sht,cols = 1:20, rows = 1:10000, gridExpand = TRUE)
+  }
+  
+}
+
+# Write to workbook
+writeData(wb, sheet = "emp_rates_data",employ_rates_df, colNames = T)
+saveWorkbook(wb,paste0(DATA_OUT,wbname),overwrite = T)
 
