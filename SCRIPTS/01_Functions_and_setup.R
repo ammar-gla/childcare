@@ -277,7 +277,7 @@ convert_to_label <- function(dta=NULL,
 
 
 # Collapse data to summarise by demography, using weights
-collapse_func <- function(dta=NULL,
+collapse_func_ILO <- function(dta=NULL,
                           group_vec=c("GOVTOF_label","parent"),
                           demog_var=NULL) {
   
@@ -292,6 +292,21 @@ collapse_func <- function(dta=NULL,
     mutate(people_tot = rowSums(across(starts_with("people_ILO"))),
            pct_employed = people_ILO_1/people_tot) # total % employed) 
   
+  
+  return(dta_collapse)
+}
+
+collapse_func <- function(dta=NULL,
+                          group_vec=c("london_resident","parent"),
+                          demog_vec=NULL,
+                          rm.na = FALSE) {
+  
+  dta_collapse <- dta %>% 
+    filter(between(AGE,16,64) & !if_any(all_of(c(demog_vec,group_vec)),is.na)) %>% # do not allow NA in variables
+    group_by(across(all_of(c(demog_vec,group_vec)))) %>% 
+    summarise(people = sum(weight_val),
+              obs_n = n()) %>% 
+    ungroup()
   
   return(dta_collapse)
 }

@@ -24,7 +24,6 @@ dataset_list_adj <- lapply(dataset_list,convert_to_label,var_vec=label_var_vec) 
 
 
 
-lfs_sum_list <- lapply(dataset_list_adj,collapse_func,demog_var="SEX_label")
 
 # Set up survey design within list
 ## The id variable is household, where clustering happens in survey
@@ -39,11 +38,12 @@ survey_design_full <- lapply(X=dataset_list_adj,
                              nest  = TRUE)
 
 # Subset to only adults (aged 16+) - do within survey package to maintain error calculation
-survey_design_adults <- lapply(survey_design_full,subset,subset=adult1664==1)
+survey_design_adults <- lapply(survey_design_full, subset, subset = adult1664 == 1)
 
 
-
+# Create empty lists for the rates and counts
 employ_rates_list <- list()
+employ_count_list <- list()
 
 perm_byvars <- c("parent","london_resident")
 analysis_byvars <- list("all"=c(),
@@ -61,12 +61,19 @@ for(i in 1:length(analysis_byvars)) {
   # Extract the variables needed
   byvars_vec <- c(perm_byvars,analysis_byvars[[i]])
   
+  # To find weighted and unweighted counts, use custom function and input the byvars
+  employ_count_list[[paste0(names(analysis_byvars)[[i]])]] <- lapply(dataset_list_adj,
+                            collapse_func,
+                            demog_vec=analysis_byvars[[i]])
+  
+  
+  
   # Construct a formula object
   fom <- formula_helper(formula_vars = byvars_vec)
   
   # Insert output into list, with name of var set
   employ_rates_list[[paste0(names(analysis_byvars)[[i]])]] <- lapply(X=survey_design_adults,
-                                                               FUN= function(design,formula,by,com,keep.var) 
+                                                               FUN= function(design,formula,by,com,keep.var,keep.names) 
                                                                  svyby(design=design,formula=formula,by=by,FUN=com,keep.var=keep.var),
                                                                formula = ~employed, 
                                                                by    = fom, 
@@ -85,9 +92,16 @@ for(i in 1:length(analysis_byvars)) {
 analysis_byvars_vec <- unname(unlist(analysis_byvars)) # due to odd behaviour from across(), need to remove names
 
 employ_rates_df <- bind_rows(lapply(employ_rates_list,bind_rows,.id="dataset"),.id="var_set") %>%  
+  remove_rownames() %>% 
   unite("byvar_characteristic",all_of(analysis_byvars_vec), sep='_',na.rm = TRUE,remove = FALSE) %>% 
   mutate(id = paste0(var_set,"_",dataset,"_",parent,"_",london_resident,"_",byvar_characteristic)) %>% 
   relocate(id)
+
+# Create a dataset with the counts, which should have the exact same number of rows as the rate estimates
+employ_counts_df <- bind_rows(lapply(employ_count_list,bind_rows,.id="dataset"),.id="var_set")
+
+employ_fulldata_df <- employ_rates_df %>% 
+  full_join(employ_counts_df,by=c("dataset","var_set",all_of(c(perm_byvars,analysis_byvars_vec))))
 
 # Export into workbook with formatted sheets
 wbname <- "Parental employment rates.xlsx"
@@ -116,6 +130,6 @@ for (sht in data_sheets) {
 }
 
 # Write to workbook
-writeData(wb, sheet = "emp_rates_data",employ_rates_df, colNames = T)
+writeData(wb, sheet = "emp_rates_data",employ_fulldata_df, colNames = T)
 saveWorkbook(wb,paste0(DATA_OUT,wbname),overwrite = T)
 
