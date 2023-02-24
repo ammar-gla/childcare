@@ -9,7 +9,9 @@
 
 # Define which variables to keep for analysis to save memory - and vars to transform to labels
 label_var_vec <- c("SEX","GOVTOF","ILODEFR","ETHUKEUL","FUTYPE6")
-analysis_var_vec <- c("parent","fam_id","AGE","adult1664","weight_val","HSERIALP","employed","london_resident","inactive","unemployed")
+analysis_var_vec <- c("parent","fam_id","AGE","adult1664","weight_val",
+                      "HSERIALP","employed","london_resident","inactive","unemployed",
+                      "age_group")
 
 # Replace variables with their value labels, then remove all value labels from the datasets to allow easy mutation of variables
 dataset_list_adj <- lapply(dataset_list,convert_to_label,var_vec=label_var_vec) %>% 
@@ -50,7 +52,8 @@ perm_byvars <- c("parent","london_resident")
 analysis_byvars <- list("all"=c(),
                         "ethnicity"=c("ETHUKEUL_label"),
                         "famtype"=c("FUTYPE6_label"),
-                        "sex"=c("SEX_label"))
+                        "sex"=c("SEX_label"),
+                        "sex.age"=c("SEX_label","age_group"))
 
 # The loop below calculates share of people employed by characteristic
 ## The parameters set the permanent demographic vars (parentage and residency)
@@ -99,7 +102,7 @@ for(i in 1:length(analysis_byvars)) {
 #.............................................................................
 
 # Delist the results and combine all into handy data frame for export
-analysis_byvars_vec <- unname(unlist(analysis_byvars)) # due to odd behaviour from across(), need to remove names
+analysis_byvars_vec <- unname(unique(unlist(analysis_byvars))) # due to odd behaviour from across(), need to remove names
 
 employ_rates_df <- bind_rows(lapply(employ_rates_list,bind_rows,.id="dataset"),.id="var_set") %>%  
   remove_rownames() %>% 

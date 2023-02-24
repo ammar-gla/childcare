@@ -112,7 +112,13 @@ recode_dta <- function(dta=NA) {
            adult1664 = case_when(between(AGE,16,64) ~ 1,
                              TRUE ~ 0),
            london_resident = case_when(GOVTOF == 8 ~ 1,
-                                       TRUE ~ 0)) 
+                                       TRUE ~ 0),
+           age_group = case_when(between(AGE,16,17) ~ "Aged 16-17",
+                                 between(AGE,18,24) ~ "Aged 18-24", 
+                                 between(AGE,25,34) ~ "Aged 25-34",
+                                 between(AGE,35,49) ~ "Aged 35-49",
+                                 between(AGE,50,64) ~ "Aged 50-64",
+                                 AGE>64 ~ "Age 65+")) 
   
   
   
