@@ -9,7 +9,7 @@
 
 # Define which variables to keep for analysis to save memory - and vars to transform to labels
 label_var_vec <- c("SEX","GOVTOF","ILODEFR","ETHUKEUL","FUTYPE6")
-analysis_var_vec <- c("parent","fam_id","AGE","adult1664","weight_val","HSERIALP","employed","london_resident")
+analysis_var_vec <- c("parent","fam_id","AGE","adult1664","weight_val","HSERIALP","employed","london_resident","inactive","unemployed")
 
 # Replace variables with their value labels, then remove all value labels from the datasets to allow easy mutation of variables
 dataset_list_adj <- lapply(dataset_list,convert_to_label,var_vec=label_var_vec) %>% 
@@ -43,7 +43,8 @@ survey_design_adults <- lapply(survey_design_full, subset, subset = adult1664 ==
 
 # Create empty lists for the rates and counts
 employ_rates_list <- list()
-employ_count_list <- list()
+inactive_rates_list <- list()
+survey_count_list <- list()
 
 perm_byvars <- c("parent","london_resident")
 analysis_byvars <- list("all"=c(),
@@ -62,7 +63,7 @@ for(i in 1:length(analysis_byvars)) {
   byvars_vec <- c(perm_byvars,analysis_byvars[[i]])
   
   # To find weighted and unweighted counts, use custom function and input the byvars
-  employ_count_list[[paste0(names(analysis_byvars)[[i]])]] <- lapply(dataset_list_adj,
+  survey_count_list[[paste0(names(analysis_byvars)[[i]])]] <- lapply(dataset_list_adj,
                             collapse_func,
                             demog_vec=analysis_byvars[[i]])
   
@@ -71,7 +72,7 @@ for(i in 1:length(analysis_byvars)) {
   # Construct a formula object
   fom <- formula_helper(formula_vars = byvars_vec)
   
-  # Insert output into list, with name of var set
+  # Insert output for employment rates into list, with name of var set
   employ_rates_list[[paste0(names(analysis_byvars)[[i]])]] <- lapply(X=survey_design_adults,
                                                                FUN= function(design,formula,by,com,keep.var,keep.names) 
                                                                  svyby(design=design,formula=formula,by=by,FUN=com,keep.var=keep.var),
@@ -79,6 +80,15 @@ for(i in 1:length(analysis_byvars)) {
                                                                by    = fom, 
                                                                com   = svymean, 
                                                                keep.var = TRUE)
+  
+  # Insert output for inactivity rates into list, with name of var set
+  inactive_rates_list[[paste0(names(analysis_byvars)[[i]])]] <- lapply(X=survey_design_adults,
+                                                                     FUN= function(design,formula,by,com,keep.var,keep.names) 
+                                                                       svyby(design=design,formula=formula,by=by,FUN=com,keep.var=keep.var),
+                                                                     formula = ~inactive, 
+                                                                     by    = fom, 
+                                                                     com   = svymean, 
+                                                                     keep.var = TRUE)
 }
 
 # To access results of any one year and var set, refer to the list level
@@ -97,17 +107,25 @@ employ_rates_df <- bind_rows(lapply(employ_rates_list,bind_rows,.id="dataset"),.
   mutate(id = paste0(var_set,"_",dataset,"_",parent,"_",london_resident,"_",byvar_characteristic)) %>% 
   relocate(id)
 
-# Create a dataset with the counts, which should have the exact same number of rows as the rate estimates
-employ_counts_df <- bind_rows(lapply(employ_count_list,bind_rows,.id="dataset"),.id="var_set")
+# Same for inactivity
+inactive_rates_df <- bind_rows(lapply(inactive_rates_list,bind_rows,.id="dataset"),.id="var_set") %>%  
+  remove_rownames() %>% 
+  unite("byvar_characteristic",all_of(analysis_byvars_vec), sep='_',na.rm = TRUE,remove = FALSE) %>% 
+  mutate(id = paste0(var_set,"_",dataset,"_",parent,"_",london_resident,"_",byvar_characteristic)) %>% 
+  relocate(id)
 
-employ_fulldata_df <- employ_rates_df %>% 
-  full_join(employ_counts_df,by=c("dataset","var_set",all_of(c(perm_byvars,analysis_byvars_vec))))
+# Create a dataset with the counts, which should have the exact same number of rows as the rate estimates
+survey_counts_df <- bind_rows(lapply(survey_count_list,bind_rows,.id="dataset"),.id="var_set")
+
+means_fulldata_df <- employ_rates_df %>% 
+  full_join(inactive_rates_df,by=c("dataset","var_set","byvar_characteristic","id",all_of(c(perm_byvars,analysis_byvars_vec))),suffix=c("_empl","_inac")) %>% 
+  full_join(survey_counts_df,by=c("dataset","var_set",all_of(c(perm_byvars,analysis_byvars_vec))))
 
 # Export into workbook with formatted sheets
-wbname <- "Parental employment rates.xlsx"
+wbname <- "Parental labour market rates.xlsx"
 wb <- loadWorkbook(paste0(DATA_OUT,wbname))
 
-data_sheets <- c("emp_rates_data")
+data_sheets <- c("lf_rates_data")
 
 # Check if sheets exists and delete data, otherwise create sheet
 for (sht in data_sheets) {
@@ -130,6 +148,6 @@ for (sht in data_sheets) {
 }
 
 # Write to workbook
-writeData(wb, sheet = "emp_rates_data",employ_fulldata_df, colNames = T)
+writeData(wb, sheet = "lf_rates_data",means_fulldata_df, colNames = T)
 saveWorkbook(wb,paste0(DATA_OUT,wbname),overwrite = T)
 
