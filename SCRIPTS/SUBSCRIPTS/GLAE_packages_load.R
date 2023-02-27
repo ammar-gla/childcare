@@ -32,6 +32,8 @@ library("openxlsx") # Excel output
 library("haven") # For loading SPSS data
 library("survey") # For using survey weights
 library("sjlabelled") # For converting value labels
+library("jtools") # For outputting nice regression tables
+library("huxtable") # outputting regression into excel
 
 # The below are needed to install GLA packages the first time it is runs
 #devtools::install_github("Greater-London-Authority/gglaplot")

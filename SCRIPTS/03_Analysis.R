@@ -24,9 +24,6 @@ dataset_list_adj <- lapply(dataset_list,convert_to_label,var_vec=label_var_vec) 
 #### Summary statistics across characteristics ----
 #.............................................................................
 
-
-
-
 # Set up survey design within list
 ## The id variable is household, where clustering happens in survey
 ## Strata is lowest possible geography, for EUL data is region
@@ -98,7 +95,43 @@ for(i in 1:length(analysis_byvars)) {
 ## e.g. employ_rates_list[[2]][[4]] is same as employ_rates_list[["ethnicity"]][["lfsh_aj_21"]]
 
 #.............................................................................
-#### Output statistics ----
+####  Try simple regressions ----
+#.............................................................................
+
+# Regress employment on parenthood, sex, age etc.
+## Note: the format X*Y means the formula includes X+Y+X:Y where the latter is interacted
+reg_model_vars <- list("simple"=c("parent"),
+                       "sex"=c("parent","SEX_label"),
+                       "sex full"=c("parent*SEX_label"),
+                       "sex & age"=c("parent","SEX_label","age_group"),
+                       "sex & age full"=c("parent*SEX_label*age_group"))
+
+reg_emp_results <- list()
+
+
+for(i in 1:length(reg_model_vars)) {
+  
+  # Extract the variables needed
+  reg_model <- c(perm_byvars,reg_model_vars[[i]])
+  
+  # Construct a formula object
+  fom <- formula_helper(outcome_var = "employed",
+                        formula_vars = byvars_vec)
+  
+  
+  reg_emp_results[[i]] <- lapply(X=survey_design_adults,
+                                 FUN= function(design,formula) 
+                                   svyglm(design=design,formula=formula),
+                                 formula = reg_fom)
+}
+
+# Export regression output
+export_summs(reg_emp_results[["lfsh_aj22"]],
+             to.file = "xlsx",
+             file.name = paste0(DATA_OUT,"Regression output 2022.xlsx"))
+
+#.............................................................................
+#### Prepare output statistics ----
 #.............................................................................
 
 # Delist the results and combine all into handy data frame for export
@@ -123,34 +156,4 @@ survey_counts_df <- bind_rows(lapply(survey_count_list,bind_rows,.id="dataset"),
 means_fulldata_df <- employ_rates_df %>% 
   full_join(inactive_rates_df,by=c("dataset","var_set","byvar_characteristic","id",all_of(c(perm_byvars,analysis_byvars_vec))),suffix=c("_empl","_inac")) %>% 
   full_join(survey_counts_df,by=c("dataset","var_set",all_of(c(perm_byvars,analysis_byvars_vec))))
-
-# Export into workbook with formatted sheets
-wbname <- "Parental labour market rates.xlsx"
-wb <- loadWorkbook(paste0(DATA_OUT,wbname))
-
-data_sheets <- c("lf_rates_data")
-
-# Check if sheets exists and delete data, otherwise create sheet
-for (sht in data_sheets) {
-  
-  # Check if exists
-  for (actual_sheets in names(wb)){
-    sht_exists <- FALSE
-    if (actual_sheets == sht) {
-      sht_exists <- TRUE
-    }
-  }
-  
-  # If not exist
-  if (sht_exists != TRUE) {
-    addWorksheet(wb, sht, tabColour = "black")
-  } else {
-    deleteData(wb , sheet = sht,cols = 1:20, rows = 1:10000, gridExpand = TRUE)
-  }
-  
-}
-
-# Write to workbook
-writeData(wb, sheet = "lf_rates_data",means_fulldata_df, colNames = T)
-saveWorkbook(wb,paste0(DATA_OUT,wbname),overwrite = T)
 
