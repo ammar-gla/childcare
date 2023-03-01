@@ -106,27 +106,30 @@ reg_model_vars <- list("simple"=c("parent"),
                        "sex & age"=c("parent","SEX_label","age_group"),
                        "sex & age full"=c("parent*SEX_label*age_group"))
 
+# Create empty list to store results
 reg_emp_results <- list()
 
+# Re-level some of the categorical variables to use as baseline in regressions
+survey_2022_reg_data <- update(survey_design_adults[["lfsh_aj22"]], age_group = relevel(factor(age_group),"Aged 25-34"))
 
+# We will only regress the 2022 data for simplicity
 for(i in 1:length(reg_model_vars)) {
   
   # Extract the variables needed
-  reg_model <- c(perm_byvars,reg_model_vars[[i]])
+  reg_model <- c(reg_model_vars[[i]])
   
   # Construct a formula object
-  fom <- formula_helper(outcome_var = "employed",
-                        formula_vars = byvars_vec)
+  reg_fom <- formula_helper(outcome_var = "employed",
+                        formula_vars = reg_model)
   
   
-  reg_emp_results[[i]] <- lapply(X=survey_design_adults,
-                                 FUN= function(design,formula) 
-                                   svyglm(design=design,formula=formula),
-                                 formula = reg_fom)
+  reg_emp_results[[paste0(names(reg_model_vars)[[i]])]] <- svyglm(design=survey_2022_reg_data,
+                                                                  formula = reg_fom)
+  
 }
 
 # Export regression output
-export_summs(reg_emp_results[["lfsh_aj22"]],
+export_summs(reg_emp_results,
              to.file = "xlsx",
              file.name = paste0(DATA_OUT,"Regression output 2022.xlsx"))
 
