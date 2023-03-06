@@ -11,7 +11,7 @@
 label_var_vec <- c("SEX","GOVTOF","ILODEFR","ETHUKEUL","FUTYPE6")
 analysis_var_vec <- c("parent","fam_id","AGE","adult1664","weight_val",
                       "HSERIALP","employed","london_resident","inactive","unemployed",
-                      "age_group")
+                      "age_group","famtype")
 
 # Replace variables with their value labels, then remove all value labels from the datasets to allow easy mutation of variables
 dataset_list_adj <- lapply(dataset_list,convert_to_label,var_vec=label_var_vec) %>% 
@@ -46,11 +46,12 @@ inactive_rates_list <- list()
 survey_count_list <- list()
 
 perm_byvars <- c("parent","london_resident")
-analysis_byvars <- list("all"=c(),
-                        "ethnicity"=c("ETHUKEUL_label"),
-                        "famtype"=c("FUTYPE6_label"),
-                        "sex"=c("SEX_label"),
-                        "sex.age"=c("SEX_label","age_group"))
+analysis_byvars <- list("all" = c(),
+                        "ethnicity" = c("ETHUKEUL_label"),
+                        "famtype_long" = c("FUTYPE6_label"),
+                        "famtype" = c("famtype"),
+                        "sex" = c("SEX_label"),
+                        "sex.age" = c("SEX_label","age_group"))
 
 # The loop below calculates share of people employed by characteristic
 ## The parameters set the permanent demographic vars (parentage and residency)
@@ -102,6 +103,7 @@ for(i in 1:length(analysis_byvars)) {
 ## Note: the format X*Y means the formula includes X+Y+X:Y where the latter is interacted
 reg_model_vars <- list("simple"=c("parent"),
                        "sex"=c("parent","SEX_label"),
+                       "famtype"=c("parent","famtype"),
                        "sex full"=c("parent*SEX_label"),
                        "sex & age"=c("parent","SEX_label","age_group"),
                        "sex & age full"=c("parent*SEX_label*age_group"))

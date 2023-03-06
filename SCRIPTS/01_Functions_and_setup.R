@@ -118,7 +118,23 @@ recode_dta <- function(dta=NA) {
                                  between(AGE,25,34) ~ "Aged 25-34",
                                  between(AGE,35,49) ~ "Aged 35-49",
                                  between(AGE,50,64) ~ "Aged 50-64",
-                                 AGE>64 ~ "Age 65+")) 
+                                 AGE>64 ~ "Age 65+"),
+           # famtype = case_when(FUTYPE6 %in% c("1 person - male","1 person - female") ~ "1 person",
+           #                     FUTYPE6 %in% c("Male lone parent with dep children","Female lone par with dep children") ~ "Lone parent with dep children",
+           #                     FUTYPE6 %in% c("Married couple with dep children","Cohab couple with dep children",
+           #                                    "Same sex cohab couple, dep children","Civil Partners with dep children") ~ "Couple with dep children",
+           #                     FUTYPE6 %in% c("Married couple, non-dep children only","Cohab couple with non-dep children only",
+           #                                    "Male lone par with non-dep chldren only","Female lone par, non-dep chldren only",
+           #                                    "Same sex cohab couple, non-dep children","Civil Partners, non-dep children only") ~ "Lone parent or couple with non-dependent children only",
+           #                     FUTYPE6 %in% c("Married couple with no children","Cohab couple with no children",
+           #                                    "Same sex cohabiting couple, no children","Civil Partners with no children") ~ "Couple with no children",
+           #                     TRUE ~ NA_character_)
+           famtype = case_when(FUTYPE6 %in% c(1,2) ~ "1 person",
+                               FUTYPE6 %in% c(10,12) ~ "Lone parent with dep children",
+                               FUTYPE6 %in% c(6,9,16,19) ~ "Couple with dep children",
+                               FUTYPE6 %in% c(5,8,11,13,15,18) ~ "Lone parent or couple with non-dependent children only",
+                               FUTYPE6 %in% c(4,7,14,17) ~ "Couple with no children",
+                               TRUE ~ NA_character_)) 
   
   
   
