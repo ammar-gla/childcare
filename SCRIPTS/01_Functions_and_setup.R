@@ -134,7 +134,10 @@ recode_dta <- function(dta=NA) {
                                FUTYPE6 %in% c(6,9,16,19) ~ "Couple with dep children",
                                FUTYPE6 %in% c(5,8,11,13,15,18) ~ "Lone parent or couple with non-dependent children only",
                                FUTYPE6 %in% c(4,7,14,17) ~ "Couple with no children",
-                               TRUE ~ NA_character_)) 
+                               TRUE ~ NA_character_),
+           wfh_d = case_when(HOME %in% c(1,2,3) ~ 1,
+                             HOME == 4 ~ 0,
+                             TRUE ~ NA_real_)) 
   
   
   
