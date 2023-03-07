@@ -8,7 +8,7 @@
 
 
 # Define which variables to keep for analysis to save memory - and vars to transform to labels
-label_var_vec <- c("SEX","GOVTOF","ILODEFR","ETHUKEUL","FUTYPE6")
+label_var_vec <- c("SEX","GOVTOF","ILODEFR","ETHUKEUL","FUTYPE6","HOME")
 analysis_var_vec <- c("parent","fam_id","AGE","adult1664","weight_val",
                       "HSERIALP","employed","london_resident","inactive","unemployed",
                       "age_group","famtype")
@@ -17,8 +17,11 @@ analysis_var_vec <- c("parent","fam_id","AGE","adult1664","weight_val",
 dataset_list_adj <- lapply(dataset_list,convert_to_label,var_vec=label_var_vec) %>% 
   lapply(haven::zap_labels) %>% 
   lapply(recode_dta) %>% 
+  lapply(dup_dataset) %>% 
   lapply(select,c(analysis_var_vec,label_var_vec,paste(label_var_vec,"_label",sep="")))
 
+# To save space, remove original dataset list
+rm(dataset_list)
 
 #.............................................................................
 #### Summary statistics across characteristics ----
@@ -37,8 +40,13 @@ survey_design_full <- lapply(X=dataset_list_adj,
                              nest  = TRUE)
 
 # Subset to only adults (aged 16+) - do within survey package to maintain error calculation
-survey_design_adults <- lapply(survey_design_full, subset, subset = adult1664 == 1)
+survey_design_adults <- lapply(survey_design_full, subset, adult1664 == 1)
 
+# Create subset for UK overall population rather than London vs. RoUK
+#survey_design_adults_uk <- lapply(survey_design_full, subset, adult1664 == 1, london_resident %in% c(2))
+
+# Remove full survey design for memory savings
+rm(survey_design_full)
 
 # Create empty lists for the rates and counts
 employ_rates_list <- list()
@@ -50,6 +58,7 @@ analysis_byvars <- list("all" = c(),
                         "ethnicity" = c("ETHUKEUL_label"),
                         "famtype_long" = c("FUTYPE6_label"),
                         "famtype" = c("famtype"),
+                        "wfh" = c("HOME_label"),
                         "sex" = c("SEX_label"),
                         "sex.age" = c("SEX_label","age_group"))
 
@@ -74,22 +83,30 @@ for(i in 1:length(analysis_byvars)) {
   fom <- formula_helper(formula_vars = byvars_vec)
   
   # Insert output for employment rates into list, with name of var set
-  employ_rates_list[[paste0(names(analysis_byvars)[[i]])]] <- lapply(X=survey_design_adults,
-                                                               FUN= function(design,formula,by,com,keep.var,keep.names) 
-                                                                 svyby(design=design,formula=formula,by=by,FUN=com,keep.var=keep.var),
-                                                               formula = ~employed, 
-                                                               by    = fom, 
-                                                               com   = svymean, 
-                                                               keep.var = TRUE)
+  # employ_rates_list[[paste0(names(analysis_byvars)[[i]])]] <- lapply(X=survey_design_adults,
+  #                                                              FUN= function(design,formula,by,com,keep.var,keep.names) 
+  #                                                                svyby(design=design,formula=formula,by=by,FUN=com,keep.var=keep.var),
+  #                                                              formula = ~employed, 
+  #                                                              by    = fom, 
+  #                                                              com   = svymean, 
+  #                                                              keep.var = TRUE)
+  # 
+  employ_rates_list[[paste0(names(analysis_byvars)[[i]])]] <- lapply_svy_means(svy_list_nm = survey_design_adults,
+                                                                               by_formula = fom,
+                                                                               means_var = employed)
   
   # Insert output for inactivity rates into list, with name of var set
-  inactive_rates_list[[paste0(names(analysis_byvars)[[i]])]] <- lapply(X=survey_design_adults,
-                                                                     FUN= function(design,formula,by,com,keep.var,keep.names) 
-                                                                       svyby(design=design,formula=formula,by=by,FUN=com,keep.var=keep.var),
-                                                                     formula = ~inactive, 
-                                                                     by    = fom, 
-                                                                     com   = svymean, 
-                                                                     keep.var = TRUE)
+  # inactive_rates_list[[paste0(names(analysis_byvars)[[i]])]] <- lapply(X=survey_design_adults,
+  #                                                                    FUN= function(design,formula,by,com,keep.var,keep.names) 
+  #                                                                      svyby(design=design,formula=formula,by=by,FUN=com,keep.var=keep.var),
+  #                                                                    formula = ~inactive, 
+  #                                                                    by    = fom, 
+  #                                                                    com   = svymean, 
+  #                                                                    keep.var = TRUE)
+  
+  inactive_rates_list[[paste0(names(analysis_byvars)[[i]])]] <- lapply_svy_means(svy_list_nm = survey_design_adults,
+                                                                               by_formula = fom,
+                                                                               means_var = inactive)
 }
 
 # To access results of any one year and var set, refer to the list level
@@ -142,23 +159,22 @@ export_summs(reg_emp_results,
 # Delist the results and combine all into handy data frame for export
 analysis_byvars_vec <- unname(unique(unlist(analysis_byvars))) # due to odd behaviour from across(), need to remove names
 
-employ_rates_df <- bind_rows(lapply(employ_rates_list,bind_rows,.id="dataset"),.id="var_set") %>%  
-  remove_rownames() %>% 
-  unite("byvar_characteristic",all_of(analysis_byvars_vec), sep='_',na.rm = TRUE,remove = FALSE) %>% 
-  mutate(id = paste0(var_set,"_",dataset,"_",parent,"_",london_resident,"_",byvar_characteristic)) %>% 
-  relocate(id)
+employ_rates_df <- delist_results(list_nm = employ_rates_list,
+                                  suffix = "empl")
 
 # Same for inactivity
-inactive_rates_df <- bind_rows(lapply(inactive_rates_list,bind_rows,.id="dataset"),.id="var_set") %>%  
-  remove_rownames() %>% 
-  unite("byvar_characteristic",all_of(analysis_byvars_vec), sep='_',na.rm = TRUE,remove = FALSE) %>% 
-  mutate(id = paste0(var_set,"_",dataset,"_",parent,"_",london_resident,"_",byvar_characteristic)) %>% 
-  relocate(id)
+inactive_rates_df <- delist_results(list_nm = inactive_rates_list,
+                                     suffix = "inac")
+
+# Create a list where each element is the delisted dataframe of results
+result_df_list <- list(employ_rates_df,
+                       inactive_rates_df)
 
 # Create a dataset with the counts, which should have the exact same number of rows as the rate estimates
 survey_counts_df <- bind_rows(lapply(survey_count_list,bind_rows,.id="dataset"),.id="var_set")
 
-means_fulldata_df <- employ_rates_df %>% 
-  full_join(inactive_rates_df,by=c("dataset","var_set","byvar_characteristic","id",all_of(c(perm_byvars,analysis_byvars_vec))),suffix=c("_empl","_inac")) %>% 
+means_fulldata_df <- result_df_list %>% 
+  reduce(full_join, 
+         by = c("dataset","var_set","byvar_characteristic","id",all_of(c(perm_byvars,analysis_byvars_vec)))) %>% 
   full_join(survey_counts_df,by=c("dataset","var_set",all_of(c(perm_byvars,analysis_byvars_vec))))
 

@@ -142,6 +142,15 @@ recode_dta <- function(dta=NA) {
   
 }
 
+# Duplicate the rows to have a UK total in addition to London and RoUK
+dup_dataset <- function(dta=NA) {
+  dup_dta <- dta %>% 
+    uncount(2, .id="row_version") %>% 
+    mutate(london_resident = case_when(row_version == 2 ~ 2,
+                                       TRUE ~ london_resident))
+  
+  return(dup_dta)
+}
 
 # For adjusted weight find prop of people who were not in this quarter's survey, and uprate
 ## The reason we are using weights from employed people is because they are the only ones with a region of work!
@@ -339,17 +348,35 @@ collapse_func <- function(dta=NULL,
   return(dta_collapse)
 }
 
+# Function to lapply a survey means through a list of survey designs and produce element in list
+lapply_svy_means <- function(svy_list_nm=NULL,
+                             means_var=NULL,
+                             by_formula=NULL) {
+  
+  means_var_form <- as.formula(paste0("~", deparse(substitute(means_var))))
+  
+  new_list_element <- lapply(X=svy_list_nm,
+                             FUN= function(design,formula,by,com,keep.var,keep.names) 
+                               svyby(design=design,formula=formula,by=by,FUN=com,keep.var=keep.var),
+                             formula = means_var_form, 
+                             by    = by_formula, 
+                             com   = svymean, 
+                             keep.var = TRUE)
+  
+  return(new_list_element)
+   
+}
 
-
-# 
-# test <- function(vars=c("london_worker","nte_worker")) {
-#   
-#   dta <- d %>% 
-#     group_by( across(all_of(vars)) ) %>% 
-#     summarise(n=n())
-#   
-#   return(dta)
-# }
-# 
-# d <- tibble(a=c(10,10,10,10,10),london_worker=c(1,2,2,1,1),nte_worker=c(1,1,2,2,2))
-# test()
+# Function to delist the results, create ID column, and add suffix to unique vars (se)
+delist_results <- function(list_nm = NULL,
+                           suffix = NULL) {
+  
+  new_df <- bind_rows(lapply(list_nm,bind_rows,.id="dataset"),.id="var_set") %>%  
+    remove_rownames() %>% 
+    unite("byvar_characteristic",all_of(analysis_byvars_vec), sep='_',na.rm = TRUE,remove = FALSE) %>% 
+    mutate(id = paste0(var_set,"_",dataset,"_",parent,"_",london_resident,"_",byvar_characteristic)) %>%
+    rename_with(.fn = ~paste0(.,"_",suffix), .cols = c("se")) %>% 
+    relocate(id)
+  
+  return(new_df)
+}
