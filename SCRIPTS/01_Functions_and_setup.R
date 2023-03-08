@@ -370,6 +370,23 @@ lapply_svy_means <- function(svy_list_nm=NULL,
    
 }
 
+map_svy_means <- function(svy_list_nm=NULL,
+                             means_var=NULL,
+                             by_formula=NULL) {
+  
+  means_var_form <- as.formula(paste0("~", deparse(substitute(means_var))))
+  
+  new_list_element <- map(.x=svy_list_nm,
+                             .f= svyby,
+                             formula = means_var_form, 
+                             by    = by_formula, 
+                             FUN   = svymean, 
+                             keep.var = TRUE)
+  
+  return(new_list_element)
+  
+}
+
 # Function to delist the results, create ID column, and add suffix to unique vars (se)
 delist_results <- function(list_nm = NULL,
                            suffix = NULL) {

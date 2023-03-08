@@ -40,11 +40,10 @@ survey_design_full <- lapply(X=dataset_list_adj,
                              nest  = TRUE)
 
 # Subset to only adults (aged 16+) - do within survey package to maintain error calculation
-survey_design_adults <- lapply(survey_design_full, subset, adult1664 == 1, london_resident %in% c(1,2))
+survey_design_adults <- lapply(survey_design_full, subset, adult1664 == 1, london_resident %in% c(1))
 
 # Remove full survey design for memory savings
 rm(survey_design_full)
-print(pryr::mem_used())
 #.............................................................................
 #### Whole pop Summary statistics across characteristics ----
 #.............................................................................
@@ -91,14 +90,14 @@ for(i in 1:num_models) {
   
   
   # Insert output for employment rates into list, with name of var set
-  employ_rates_list[[i]] <- lapply_svy_means(svy_list_nm = survey_design_adults,
+  employ_rates_list[[i]] <- map_svy_means(svy_list_nm = survey_design_adults,
                                                                                by_formula = fom,
                                                                                means_var = employed)
   
 
   gc()
   # Insert output for inactivity rates into list, with name of var set
-  inactive_rates_list[[i]] <- lapply_svy_means(svy_list_nm = survey_design_adults,
+  inactive_rates_list[[i]] <- map_svy_means(svy_list_nm = survey_design_adults,
                                                                                by_formula = fom,
                                                                                means_var = inactive)
   gc()
@@ -125,8 +124,8 @@ for(i in 1:num_models) {
   
   # To find weighted and unweighted counts, use custom function and input the byvars
   deep_survey_count_list[[i]] <- lapply(dataset_list_adj,
-                                                                     collapse_func,
-                                                                     demog_vec=analysis_byvars[[i]])
+                                        collapse_func,
+                                        demog_vec=analysis_byvars[[i]])
   
   # Construct a formula object
   fom <- formula_helper(formula_vars = byvars_vec)
@@ -134,7 +133,7 @@ for(i in 1:num_models) {
   gc() 
   
   # WFH rates (somewhat different from above)
-  wfh_rates_list[[i]] <- lapply_svy_means(svy_list_nm = survey_design_adults_emp,
+  wfh_rates_list[[i]] <- map_svy_means(svy_list_nm = survey_design_adults_emp,
                                                                             by_formula = fom,
                                                                             means_var = wfh_d)
   gc() 
