@@ -8,7 +8,7 @@
 
 
 # Define which variables to keep for analysis to save memory - and vars to transform to labels
-label_var_vec <- c("SEX","GOVTOF","ILODEFR","ETHUKEUL","FUTYPE6")
+label_var_vec <- c("SEX","GOVTOF","ILODEFR","ETHUKEUL")
 analysis_var_vec <- c("parent","fam_id","AGE","adult1664","weight_val",
                       "HSERIALP","employed","london_resident","inactive","unemployed",
                       "age_group","famtype","wfh_d")
@@ -18,7 +18,7 @@ dataset_list_adj <- lapply(dataset_list,convert_to_label,var_vec=label_var_vec) 
   lapply(haven::zap_labels) %>% 
   lapply(recode_dta) %>% 
   lapply(dup_dataset) %>% 
-  lapply(select,c(analysis_var_vec,label_var_vec,paste(label_var_vec,"_label",sep="")))
+  lapply(select,c(analysis_var_vec,paste(label_var_vec,"_label",sep="")))
 
 # To save space, remove original dataset list
 rm(dataset_list)
@@ -44,17 +44,14 @@ survey_design_adults <- lapply(survey_design_full, subset, adult1664 == 1, londo
 
 # Remove full survey design for memory savings
 rm(survey_design_full)
-
+print(pryr::mem_used())
 #.............................................................................
 #### Whole pop Summary statistics across characteristics ----
 #.............................................................................
 
 # These means using whole population as denominator, so suitable for employment and inactivity rates
 
-# Create empty lists for the rates and counts
-employ_rates_list <- list()
-inactive_rates_list <- list()
-survey_adult_count_list <- list()
+
 
 perm_byvars <- c("parent","london_resident")
 analysis_byvars <- list("all" = c(),
@@ -63,40 +60,49 @@ analysis_byvars <- list("all" = c(),
                         "sex" = c("SEX_label"),
                         "sex.age" = c("SEX_label","age_group"))
 
+# Find number of models to initialise list sizes
+num_models <- length(analysis_byvars)
+
+# Create empty lists for the rates and counts
+employ_rates_list <- setNames(vector("list", num_models),names(analysis_byvars))
+inactive_rates_list <- setNames(vector("list", num_models),names(analysis_byvars))
+survey_adult_count_list <- setNames(vector("list", num_models),names(analysis_byvars))
+
 # The loop below calculates share of people employed by characteristic
 ## The parameters set the permanent demographic vars (parentage and residency)
 ## followed by optional other variables, with appropriate names
 ## The output is then saved in a list of lists, with top levels named by var set
 ## and bottom levels named by the dataset name (i.e. year of dataset)
-for(i in 1:length(analysis_byvars)) {
+
+for(i in 1:num_models) {
   
   # Extract the variables needed
   byvars_vec <- c(perm_byvars,analysis_byvars[[i]])
   
   # To find weighted and unweighted counts, use custom function and input the byvars
-  survey_adult_count_list[[paste0(names(analysis_byvars)[[i]])]] <- lapply(dataset_list_adj,
+  survey_adult_count_list[[i]] <- lapply(dataset_list_adj,
                             collapse_func,
                             demog_vec=analysis_byvars[[i]])
   
-  
+  gc()
   
   # Construct a formula object
   fom <- formula_helper(formula_vars = byvars_vec)
   
-  gc() 
   
   # Insert output for employment rates into list, with name of var set
-  employ_rates_list[[paste0(names(analysis_byvars)[[i]])]] <- lapply_svy_means(svy_list_nm = survey_design_adults,
+  employ_rates_list[[i]] <- lapply_svy_means(svy_list_nm = survey_design_adults,
                                                                                by_formula = fom,
                                                                                means_var = employed)
-  gc() 
   
+
+  gc()
   # Insert output for inactivity rates into list, with name of var set
-  inactive_rates_list[[paste0(names(analysis_byvars)[[i]])]] <- lapply_svy_means(svy_list_nm = survey_design_adults,
+  inactive_rates_list[[i]] <- lapply_svy_means(svy_list_nm = survey_design_adults,
                                                                                by_formula = fom,
                                                                                means_var = inactive)
-  gc() 
-}
+  gc()
+  }
 
 # To access results of any one year and var set, refer to the list level
 ## e.g. employ_rates_list[[2]][[4]] is same as employ_rates_list[["ethnicity"]][["lfsh_aj_21"]]
@@ -109,16 +115,16 @@ for(i in 1:length(analysis_byvars)) {
 survey_design_adults_emp <- lapply(survey_design_adults, subset, employed==1)
 
 # Create empty lists for the rates and counts
-deep_survey_count_list <- list()
-wfh_rates_list <- list()
+deep_survey_count_list <- setNames(vector("list", num_models),names(analysis_byvars))
+wfh_rates_list <- setNames(vector("list", num_models),names(analysis_byvars))
 
-for(i in 1:length(analysis_byvars)) {
+for(i in 1:num_models) {
   
   # Extract the variables needed
   byvars_vec <- c(perm_byvars,analysis_byvars[[i]])
   
   # To find weighted and unweighted counts, use custom function and input the byvars
-  deep_survey_count_list[[paste0(names(analysis_byvars)[[i]])]] <- lapply(dataset_list_adj,
+  deep_survey_count_list[[i]] <- lapply(dataset_list_adj,
                                                                      collapse_func,
                                                                      demog_vec=analysis_byvars[[i]])
   
@@ -128,7 +134,7 @@ for(i in 1:length(analysis_byvars)) {
   gc() 
   
   # WFH rates (somewhat different from above)
-  wfh_rates_list[[paste0(names(analysis_byvars)[[i]])]] <- lapply_svy_means(svy_list_nm = survey_design_adults_emp,
+  wfh_rates_list[[i]] <- lapply_svy_means(svy_list_nm = survey_design_adults_emp,
                                                                             by_formula = fom,
                                                                             means_var = wfh_d)
   gc() 
@@ -149,13 +155,14 @@ reg_model_vars <- list("simple"=c("parent"),
                        "sex & age full"=c("parent*SEX_label*age_group"))
 
 # Create empty list to store results
-reg_emp_results <- list()
+num_reg_models <- length(reg_model_vars)
+reg_emp_results <- vector("list", reg_model_vars)
 
 # Re-level some of the categorical variables to use as baseline in regressions
 survey_2022_reg_data <- update(survey_design_adults[["lfsh_aj22"]], age_group = relevel(factor(age_group),"Aged 25-34"))
 
 # We will only regress the 2022 data for simplicity
-for(i in 1:length(reg_model_vars)) {
+for(i in 1:num_reg_models) {
   
   # Extract the variables needed
   reg_model <- c(reg_model_vars[[i]])
