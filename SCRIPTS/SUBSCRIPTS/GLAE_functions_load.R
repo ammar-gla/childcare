@@ -264,6 +264,16 @@ formula_helper <- function(outcome_var=NULL,
   return(f)
 }
 
+# Output text in color
+display <- function(txt=NULL,
+                    colour="green") {
+  
+  checkmate::assert(!is.null(txt))
+  
+  params <- list(txt,"\n")
+  cat(do.call(colour,params))
+}
+
 #.............................................................................
 ### Charting functions ----
 #.............................................................................
