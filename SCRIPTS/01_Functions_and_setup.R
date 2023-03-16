@@ -137,7 +137,10 @@ recode_dta <- function(dta=NA) {
                                TRUE ~ NA_character_),
            wfh_d = case_when(HOME %in% c(1,2,3) ~ 1,
                              HOME == 4 ~ 0,
-                             TRUE ~ NA_real_)) 
+                             TRUE ~ NA_real_),
+           age_child = case_when(AYFL19 <= 2 ~ "2 yrs or less", #age of youngest child
+                                 between(AYFL19,3,4) ~ "3-4 yrs",
+                                 AYFL19 > 4 ~ "More then 4 yrs")) 
   
   
   

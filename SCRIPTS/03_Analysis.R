@@ -8,10 +8,10 @@
 
 
 # Define which variables to keep for analysis to save memory - and vars to transform to labels
-label_var_vec <- c("SEX","GOVTOF","ILODEFR","ETHUKEUL")
+label_var_vec <- c("SEX","GOVTOF","ILODEFR","ETHUKEUL","BENFTS","FTPT")
 analysis_var_vec <- c("parent","fam_id","AGE","adult1664","weight_val",
                       "HSERIALP","employed","london_resident","inactive","unemployed",
-                      "age_group","famtype","wfh_d")
+                      "age_group","famtype","wfh_d","age_child")
 
 # Replace variables with their value labels, then remove all value labels from the datasets to allow easy mutation of variables
 dataset_list_adj <- lapply(dataset_list,convert_to_label,var_vec=label_var_vec) %>% 
@@ -57,9 +57,13 @@ perm_byvars <- c("parent")
 region_byvar <- c("london_resident","")
 
 analysis_byvars <- list("all" = c(),
-                        "ethnicity" = c("ETHUKEUL_label"),
-                        "famtype" = c("famtype"),
+                        #"ethnicity" = c("ETHUKEUL_label"),
+                        #"famtype" = c("famtype"),
                         "sex" = c("SEX_label"),
+                        #"benefits"=c("BENFTS_label"),
+                        "age_child"=c("age_child"),
+                        #"sex.age" = c("SEX_label","age_group"),
+                        #"sex.famtype" = c("SEX_label","famtype"),
                         "sex.age" = c("SEX_label","age_group"))
 
 # Find number of models to initialise list sizes
@@ -146,6 +150,8 @@ empl_survey_count_list <- setNames(vector("list", num_list_elements),
                                    rep(names(analysis_byvars),length(region_byvar)))
 wfh_rates_list <- setNames(vector("list", num_list_elements),
                            rep(names(analysis_byvars),length(region_byvar)))
+ftpt_rates_list <- setNames(vector("list", num_list_elements),
+                           rep(names(analysis_byvars),length(region_byvar)))
 
 ## Also run separately for London vs. RoUK, and UK total, to combine later
 display("#########################")
@@ -184,49 +190,54 @@ for(r in 1:length(region_byvar)) {
     wfh_rates_list[[pos_i]] <- map_svy_means(svy_list_nm = survey_design_adults_emp,
                                          by_formula = fom,
                                          means_var = wfh_d)
+    
+    # FT/PT rates (somewhat different from above)
+    ftpt_rates_list[[pos_i]] <- map_svy_means(svy_list_nm = survey_design_adults_emp,
+                                             by_formula = fom,
+                                             means_var = wfh_d)
   }
 }
 
 #.............................................................................
 ####  Try simple regressions ----
 #.............................................................................
-
-# Regress employment on parenthood, sex, age etc.
-## Note: the format X*Y means the formula includes X+Y+X:Y where the latter is interacted
-reg_model_vars <- list("simple"=c("parent"),
-                       "sex"=c("parent","SEX_label"),
-                       "famtype"=c("parent","famtype"),
-                       "sex full"=c("parent*SEX_label"),
-                       "sex & age"=c("parent","SEX_label","age_group"),
-                       "sex & age full"=c("parent*SEX_label*age_group"))
-
-# Create empty list to store results
-num_reg_models <- length(reg_model_vars)
-reg_emp_results <- setNames(vector("list", num_reg_models),names(reg_model_vars))
-
-# Re-level some of the categorical variables to use as baseline in regressions
-survey_2022_reg_data <- update(survey_design_adults[["lfsh_aj22"]], age_group = relevel(factor(age_group),"Aged 25-34"))
-
-# We will only regress the 2022 data for simplicity
-for(i in 1:num_reg_models) {
-  
-  # Extract the variables needed
-  reg_model <- c(reg_model_vars[[i]])
-  
-  # Construct a formula object
-  reg_fom <- formula_helper(outcome_var = "employed",
-                        formula_vars = reg_model)
-  
-  
-  reg_emp_results[[i]] <- svyglm(design=survey_2022_reg_data,
-                                 formula = reg_fom)
-  
-}
-
-# Export regression output
-export_summs(reg_emp_results,
-             to.file = "xlsx",
-             file.name = paste0(DATA_OUT,"Regression output 2022.xlsx"))
+# 
+# # Regress employment on parenthood, sex, age etc.
+# ## Note: the format X*Y means the formula includes X+Y+X:Y where the latter is interacted
+# reg_model_vars <- list("simple"=c("parent"),
+#                        "sex"=c("parent","SEX_label"),
+#                        "famtype"=c("parent","famtype"),
+#                        "sex full"=c("parent*SEX_label"),
+#                        "sex & age"=c("parent","SEX_label","age_group"),
+#                        "sex & age full"=c("parent*SEX_label*age_group"))
+# 
+# # Create empty list to store results
+# num_reg_models <- length(reg_model_vars)
+# reg_emp_results <- setNames(vector("list", num_reg_models),names(reg_model_vars))
+# 
+# # Re-level some of the categorical variables to use as baseline in regressions
+# survey_2022_reg_data <- update(survey_design_adults[["lfsh_aj22"]], age_group = relevel(factor(age_group),"Aged 25-34"))
+# 
+# # We will only regress the 2022 data for simplicity
+# for(i in 1:num_reg_models) {
+#   
+#   # Extract the variables needed
+#   reg_model <- c(reg_model_vars[[i]])
+#   
+#   # Construct a formula object
+#   reg_fom <- formula_helper(outcome_var = "employed",
+#                         formula_vars = reg_model)
+#   
+#   
+#   reg_emp_results[[i]] <- svyglm(design=survey_2022_reg_data,
+#                                  formula = reg_fom)
+#   
+# }
+# 
+# # Export regression output
+# export_summs(reg_emp_results,
+#              to.file = "xlsx",
+#              file.name = paste0(DATA_OUT,"Regression output 2022.xlsx"))
 
 #.............................................................................
 #### Prepare output statistics ----
@@ -270,8 +281,10 @@ means_fulldata_df <- result_df_list %>%
 
 wfh_rates_df <- delist_results(list_nm = wfh_rates_list,
                                suffix = "wfh")
+ftpt_rates_df <- delist_results(list_nm = wfh_rates_list,
+                               suffix = "ftpt")
 
-empl_result_df_list <- list(wfh_rates_df)
+empl_result_df_list <- list(wfh_rates_df,ftpt_rates_df)
 
 empl_survey_counts_df <- bind_rows(lapply(empl_survey_count_list,bind_rows,.id="dataset"),.id="var_set")
 
