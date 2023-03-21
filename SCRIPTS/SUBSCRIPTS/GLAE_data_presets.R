@@ -24,9 +24,9 @@ boroughs_group <- c(1811939540,1811939541,1811939542,1811939543,1811939544,18119
 #### London borough geographical codes ----
 #.............................................................................
 
-London_LA_codes <-readxl::read_excel(path = paste0(INPUT,"London borough codes.xlsx"), sheet = "Codes") %>% 
-  clean_names() %>% 
-  rename(geography_name=area)
+#London_LA_codes <-readxl::read_excel(path = paste0(INPUT,"London borough codes.xlsx"), sheet = "Codes") %>% 
+#  clean_names() %>% 
+#  rename(geography_name=area)
 
 #.............................................................................
 #### Labour market data release dates ----
