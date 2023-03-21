@@ -137,7 +137,13 @@ recode_dta <- function(dta=NA) {
                                TRUE ~ NA_character_),
            wfh_d = case_when(HOME %in% c(1,2,3) ~ 1,
                              HOME == 4 ~ 0,
-                             TRUE ~ NA_real_)) 
+                             TRUE ~ NA_real_),
+           pt_d = case_when(FTPT %in% c(1,3) ~ 0, #if working full-time
+                            FTPT %in% c(2,4) ~ 1, #working part time
+                            TRUE ~ NA_real_),
+           age_child = case_when(AYFL19 <= 2 ~ "2 yrs or less", #age of youngest child
+                                 between(AYFL19,3,4) ~ "3-4 yrs",
+                                 AYFL19 > 4 ~ "More then 4 yrs")) 
   
   
   
@@ -341,12 +347,17 @@ collapse_func <- function(dta=NULL,
                           demog_vec=NULL,
                           rm.na = FALSE) {
   
+  # Since some of the elements in the column name vectors may be emptry strings, particularly the lack of region,
+  # ensure only nonempty vector elements are passed on
+  by_cols <- c(group_vec,demog_vec) %>% 
+    magrittr::extract(nzchar(.))
+  
   dta_collapse <- dta %>% 
-    filter(between(AGE,16,64) & !if_any(all_of(c(demog_vec,group_vec)),is.na)) %>% # do not allow NA in variables
-    group_by(across(all_of(c(demog_vec,group_vec)))) %>% 
+    filter(between(AGE,16,64) & !if_any(all_of(by_cols),is.na)) %>% # do not allow NA in variables
+    group_by(across(all_of(by_cols))) %>% 
     summarise(people = sum(weight_val),
-              obs_n = n()) %>% 
-    ungroup()
+              obs_n = n(),
+              .groups = "drop")
   
   return(dta_collapse)
 }
@@ -370,6 +381,25 @@ lapply_svy_means <- function(svy_list_nm=NULL,
    
 }
 
+# Do same function with map, supposedly less memory intensive
+map_svy_means <- function(svy_list_nm=NULL,
+                          means_var=NULL,
+                          by_formula=NULL) {
+  
+  means_var_form <- as.formula(paste0("~", deparse(substitute(means_var))))
+  
+  new_list_element <- map(.x=svy_list_nm,
+                          .f= svyby,
+                          formula = means_var_form, 
+                          by    = by_formula, 
+                          FUN   = svymean,
+                          na.rm = TRUE,
+                          keep.var = TRUE)
+  
+  return(new_list_element)
+  
+}
+
 # Function to delist the results, create ID column, and add suffix to unique vars (se)
 delist_results <- function(list_nm = NULL,
                            suffix = NULL) {
@@ -383,3 +413,4 @@ delist_results <- function(list_nm = NULL,
   
   return(new_df)
 }
+

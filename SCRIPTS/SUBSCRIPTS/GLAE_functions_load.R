@@ -264,6 +264,16 @@ formula_helper <- function(outcome_var=NULL,
   return(f)
 }
 
+# Output text in color
+display <- function(txt=NULL,
+                    colour="green") {
+  
+  checkmate::assert(!is.null(txt))
+  
+  params <- list(txt,"\n")
+  cat(do.call(colour,params))
+}
+
 #.............................................................................
 ### Charting functions ----
 #.............................................................................
@@ -341,6 +351,75 @@ LFS_line_chart <- function( data_set = lfs_stats, ### This function has been wri
   return(glaplot)
   
 }
+
+#.............................................................................
+# 
+# 
+# GLA_line_range_chart <- function( data_set = NULL, ### This function has been written to work specifically with the NM_59_1 dataset
+#                                   min_x_var = as.Date("2018-01-01"), 
+#                                   y_var = NULL, 
+#                                   conf_var = NULL,
+#                                   conf_factor = 2,
+#                                   geography = c(1, NA_real_),
+#                                   suffix = "%",
+#                                   y_limits = c(0,100),
+#                                   nudge_y = NULL,
+#                                   title = NULL,
+#                                   subtitle = NULL,
+#                                   caption = "",
+#                                   chart_name = NULL,
+#                                   date_label = "%b %Y" ) {
+#   
+#   pal <- gla_pal(gla_theme = "default", palette_type = "highlight", n = c(1, 1))
+#   theme_set(theme_gla(gla_theme = "default"))
+#   
+#   ### Create dataset for charting
+#   for_charting <- data_set %>% 
+#       filter(london_resident %in% geography & {{x_var}}>=min_x_var) %>% 
+#     mutate(upper_y = {{y_var}} + conf_factor * {{conf_var}},
+#            lower_y = {{y_var}} - conf_factor * {{conf_var}},
+#            date_day = ymd(paste0("20",substr(dataset,nchar("lfsh_aj18")-1,nchar("lfsh_aj18")),"-06-01")),
+#            parent = fct_recode(factor(parent), "Non-parents" = "0", "Parents" = "1"),
+#            london_resident = fct_recode(factor(london_resident), "London" = "1", "RoUK" = "0","UK" = "NA")),
+#            cat_var = paste0(""))
+#   
+#   
+#   
+#   ### Plot charts
+#   glaplot <- for_charting %>%
+#     ggplot(mapping = aes(x = date_day, y = {{y_var}}, 
+#                          colour = geography_name, group = geography_name,
+#                          text = paste0(
+#                            geography_name, "\n",
+#                            format(date_day,'%B %Y'), "\n",
+#                            "Rate: ", perc_form({{y_var}}),"%", "\n"))) +
+#     ggla_line(aes(size= geography_name)) +
+#     scale_size_manual(values = c(2 * mm_to_pt, 1 * mm_to_pt)) +
+#     scale_colour_manual(values = pal) +
+#     ggla_highlight(filter_type = "end") +
+#     geom_vline(aes(xintercept = as.numeric(ymd("2020-03-01"))),
+#                linetype = "dotted",
+#                size = 1 * mm_to_pt,
+#                colour = rgb(166,166,166,maxColorValue = 255)) + # mark lockdowns start
+#     coord_cartesian(clip = 'off') +
+#     scale_y_continuous(expand = c(0, 0), labels = percent_format(prefix = "", 
+#                                                                 suffix = suffix), 
+#                        limits = y_limits) +
+#     scale_x_date( date_breaks = "1 year",
+#                   date_labels = date_label,
+#                   expand = expansion( mult = c(0.05,0.05))) +
+#     theme(plot.margin = unit(c(1,1,1,1), "cm"))+
+#     labs(title = title,
+#          subtitle = subtitle,
+#          caption = caption) +
+#     theme(plot.caption = element_text(color = rgb(166,166,166,maxColorValue = 255)))
+#   
+#   
+#   save_GLA_plot(plot_name = chart_name)
+#   
+#   return(glaplot)
+#   
+# }
 
 #.............................................................................
 
