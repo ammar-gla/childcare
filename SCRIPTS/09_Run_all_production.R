@@ -33,9 +33,13 @@
   
   source(paste0(SCRIPTS,"02_Dataload",".r"))
   
-  source(paste0(SCRIPTS,"03_Analysis",".r"))
+  source(paste0(SCRIPTS,"03_Setup",".r"))
   
-  source(paste0(SCRIPTS,"04_Output",".r"))
+  source(paste0(SCRIPTS,"04_Sumstats",".r"))
+  
+  source(paste0(SCRIPTS,"05_Regressions",".r"))
+  
+  source(paste0(SCRIPTS,"06_Output",".r"))
 
   
   

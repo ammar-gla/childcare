@@ -1,48 +1,8 @@
 #_____________________________________________________________________________
-### Survey level analysis ----
+### Summary tables ----
 #_____________________________________________________________________________
 
-#.............................................................................
-#### Prepare analysis data ----
-#.............................................................................
 
-
-# Define which variables to keep for analysis to save memory - and vars to transform to labels
-label_var_vec <- c("SEX","GOVTOF","ILODEFR","BENFTS","INDS07M")
-analysis_var_vec <- c("parent","fam_id","AGE","adult1664","weight_val",
-                      "HSERIALP","employed","london_resident","inactive","unemployed",
-                      "age_group","famtype","wfh_d","age_child","ethnicity","pt_d")
-
-# Replace variables with their value labels, then remove all value labels from the datasets to allow easy mutation of variables
-dataset_list_adj <- lapply(dataset_list,convert_to_label,var_vec=label_var_vec) %>% 
-  lapply(haven::zap_labels) %>% 
-  lapply(recode_dta) %>% 
-  lapply(select,c(analysis_var_vec,paste(label_var_vec,"_label",sep="")))
-
-# To save space, remove original dataset list
-rm(dataset_list)
-
-#.............................................................................
-#### Build survey design ----
-#.............................................................................
-
-# Set up survey design within list
-## The id variable is household, where clustering happens in survey
-## Strata is lowest possible geography, for EUL data is region
-## nest set to TRUE to detect if primary sampling units appear in multiple strate (they should not)
-survey_design_full <- lapply(X=dataset_list_adj,
-                             FUN= function(dta,id,strata,weights,nest) 
-                               svydesign(data=dta,id=id,strata=strata,weights=weights,nest=nest),
-                             id   = ~HSERIALP, #clustered at household, NOT family unit
-                             strata = ~GOVTOF_label,#lowest possible geo 
-                             weights = ~weight_val, 
-                             nest  = TRUE)
-
-# Subset to only adults (aged 16+) - do within survey package to maintain error calculation
-survey_design_adults <- lapply(survey_design_full, subset, adult1664 == 1)
-
-# Remove full survey design for memory savings
-rm(survey_design_full)
 #.............................................................................
 #### Whole pop Summary statistics across characteristics ----
 #.............................................................................
@@ -123,14 +83,14 @@ for(r in 1:length(region_byvar)) {
     
     # Insert output for employment rates into list, with name of var set
     employ_rates_list[[pos_i]] <- map_svy_means(svy_list_nm = survey_design_adults,
-                                            by_formula = fom,
-                                            means_var = employed)
+                                                by_formula = fom,
+                                                means_var = employed)
     
     
     # Insert output for inactivity rates into list, with name of var set
     inactive_rates_list[[pos_i]] <- map_svy_means(svy_list_nm = survey_design_adults,
-                                              by_formula = fom,
-                                              means_var = inactive)
+                                                  by_formula = fom,
+                                                  means_var = inactive)
   }
   
 }
@@ -152,7 +112,7 @@ empl_survey_count_list <- setNames(vector("list", num_list_elements),
 wfh_rates_list <- setNames(vector("list", num_list_elements),
                            rep(names(analysis_byvars),length(region_byvar)))
 pt_rates_list <- setNames(vector("list", num_list_elements),
-                           rep(names(analysis_byvars),length(region_byvar)))
+                          rep(names(analysis_byvars),length(region_byvar)))
 
 ## Also run separately for London vs. RoUK, and UK total, to combine later
 display("#########################")
@@ -180,8 +140,8 @@ for(r in 1:length(region_byvar)) {
     
     # To find weighted and unweighted counts, use custom function and input the byvars
     empl_survey_count_list[[pos_i]] <- lapply(dataset_list_adj,
-                                          collapse_func,
-                                          demog_vec=analysis_byvars[[i]])
+                                              collapse_func,
+                                              demog_vec=analysis_byvars[[i]])
     
     # Construct a formula object
     fom <- formula_helper(formula_vars = byvars_vec)
@@ -189,58 +149,15 @@ for(r in 1:length(region_byvar)) {
     
     # WFH rates (somewhat different from above)
     wfh_rates_list[[pos_i]] <- map_svy_means(svy_list_nm = survey_design_adults_emp,
-                                         by_formula = fom,
-                                         means_var = wfh_d)
+                                             by_formula = fom,
+                                             means_var = wfh_d)
     
     # FT/PT rates (somewhat different from above)
     pt_rates_list[[pos_i]] <- map_svy_means(svy_list_nm = survey_design_adults_emp,
-                                             by_formula = fom,
-                                             means_var = pt_d)
+                                            by_formula = fom,
+                                            means_var = pt_d)
   }
 }
-
-#.............................................................................
-####  Try simple regressions ----
-#.............................................................................
-
-# Regress employment on parenthood, sex, age etc.
-## Note: the format X*Y means the formula includes X+Y+X:Y where the latter is interacted
-reg_model_vars <- list("simple"=c("parent"),
-                       "sex"=c("parent","SEX_label"),
-                       "famtype"=c("parent","famtype"),
-                       "sex full"=c("parent*SEX_label"),
-                       "sex & age"=c("parent","SEX_label","age_group"),
-                       "sex & age full"=c("parent*SEX_label*age_group"),
-                       "sex & age_child"=c("parent*SEX_label","age_child"),
-                       "sex, eth, age, & age_child"=c("parent*SEX_label","ethnicity","age_group","age_child"))
-
-# Create empty list to store results
-num_reg_models <- length(reg_model_vars)
-reg_emp_results <- setNames(vector("list", num_reg_models),names(reg_model_vars))
-
-# Re-level some of the categorical variables to use as baseline in regressions
-survey_2022_reg_data <- update(survey_design_adults[["lfsh_aj22"]], age_group = relevel(factor(age_group),"Aged 25-34"))
-
-# We will only regress the 2022 data for simplicity
-for(i in 1:num_reg_models) {
-
-  # Extract the variables needed
-  reg_model <- c(reg_model_vars[[i]])
-
-  # Construct a formula object
-  reg_fom <- formula_helper(outcome_var = "employed",
-                        formula_vars = reg_model)
-
-
-  reg_emp_results[[i]] <- svyglm(design=survey_2022_reg_data,
-                                 formula = reg_fom)
-
-}
-
-# Export regression output
-export_summs(reg_emp_results,
-             to.file = "xlsx",
-             file.name = paste0(DATA_OUT,"Regression output 2022.xlsx"))
 
 #.............................................................................
 #### Prepare output statistics ----
@@ -260,7 +177,7 @@ employ_rates_df <- delist_results(list_nm = employ_rates_list,
 
 # Same for inactivity
 inactive_rates_df <- delist_results(list_nm = inactive_rates_list,
-                                     suffix = "inac")
+                                    suffix = "inac")
 
 
 # Create a list where each element is the delisted dataframe of results
@@ -273,7 +190,7 @@ survey_counts_df <- bind_rows(lapply(survey_adult_count_list,bind_rows,.id="data
 # Create dataset with all results and counts merged together by same columns
 join_vars <- c("dataset","var_set",c(perm_byvars,region_byvar,analysis_byvars_vec)) %>% 
   magrittr::extract(nzchar(.))
-  
+
 means_fulldata_df <- result_df_list %>% 
   reduce(full_join, by = c("byvar_characteristic","id",join_vars)) %>% 
   full_join(survey_counts_df,by=join_vars)
@@ -285,7 +202,7 @@ means_fulldata_df <- result_df_list %>%
 wfh_rates_df <- delist_results(list_nm = wfh_rates_list,
                                suffix = "wfh")
 pt_rates_df <- delist_results(list_nm = pt_rates_list,
-                               suffix = "pt")
+                              suffix = "pt")
 
 empl_result_df_list <- list(wfh_rates_df,pt_rates_df)
 
