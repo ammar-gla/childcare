@@ -20,6 +20,7 @@ analysis_byvars <- list("all" = c(),
                         "ethnicity" = c("ethnicity"), #using the simple BAME categories
                         "famtype" = c("famtype"),
                         "sex" = c("SEX_label"),
+                        "age" = c("age_group"),
                         "benefits"=c("BENFTS_label"),
                         "age_child"=c("age_child"),
                         "sex.age" = c("SEX_label","age_group"),
