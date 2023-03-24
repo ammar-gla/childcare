@@ -65,10 +65,10 @@ pull_dtpt <- function(dt=NULL,flt=NULL,vr=NULL) {
 # pull_dtpt(dt=paye_nat_long,flt="nationality == 'EU' & region== 'London' & date_day == max(date_day)",vr="employee_count")
 
 # Function to save last chart displayed in PNG and SVG
-save_GLA_plot <- function(plot_name, path=IMAGES, w=8, h=8,svg_save=TRUE) {
+save_GLA_plot <- function(plot_name, path=IMAGES, w=8, h=8,svg_save=FALSE) {
   if (svg_save==TRUE) ggsave(paste0(path,Sys.Date(),"_",plot_name,".svg"),
                              device = "svg", width = w, height = h, units = "in")
-  ggsave(paste0(path,Sys.Date(),"_",plot_name,".png"),
+  ggsave(paste0(path,plot_name,".png"),
          device = "png", width = w, height = h, units = "in")
 }
 
