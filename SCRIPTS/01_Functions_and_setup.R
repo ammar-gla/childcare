@@ -83,6 +83,12 @@ recode_dta <- function(dta=NA) {
 
   if (dta_year_check>2020) soc_var <- "SOC20M" else soc_var <- "SOC10M"  # for detailed occ
   
+  # if (dta_year_check>=2022) {
+  #   quals_var <- LEVQUL22_label
+  # } else if (between(dta_year_check,2015,2021)) {
+  #   quals_var <- LEVQUL15_label
+  # }
+  
   # Change data
   dta_adj <- dta %>% 
     mutate(ethnicity = case_when(ETHUKEUL == 1 ~ "White",
@@ -133,11 +139,14 @@ recode_dta <- function(dta=NA) {
            #                     FUTYPE6 %in% c("Married couple with no children","Cohab couple with no children",
            #                                    "Same sex cohabiting couple, no children","Civil Partners with no children") ~ "Couple with no children",
            #                     TRUE ~ NA_character_)
-           famtype = case_when(FUTYPE6 %in% c(1,2) ~ "1 person",
-                               FUTYPE6 %in% c(10,12) ~ "Lone parent with dep children",
-                               FUTYPE6 %in% c(6,9,16,19) ~ "Couple with dep children",
-                               FUTYPE6 %in% c(5,8,11,13,15,18) ~ "Lone parent or couple with non-dependent children only",
-                               FUTYPE6 %in% c(4,7,14,17) ~ "Couple with no children",
+           # famtype = case_when(FUTYPE6 %in% c(1,2) ~ "1 person",
+           #                     FUTYPE6 %in% c(10,12) ~ "Lone parent with dep children",
+           #                     FUTYPE6 %in% c(6,9,16,19) ~ "Couple with dep children",
+           #                     FUTYPE6 %in% c(5,8,11,13,15,18) ~ "Lone parent or couple with non-dependent children only",
+           #                     FUTYPE6 %in% c(4,7,14,17) ~ "Couple with no children",
+           #                     TRUE ~ NA_character_),
+           famtype = case_when(FUTYPE6 %in% c(1,2,10,11,12,13) ~ "1 person",
+                               FUTYPE6 %in% c(6,9,16,19,4,7,14,17,5,8,15,18) ~ "Couple",
                                TRUE ~ NA_character_),
            wfh_d = case_when(HOME %in% c(1,2,3) ~ 1,
                              HOME == 4 ~ 0,
@@ -147,7 +156,10 @@ recode_dta <- function(dta=NA) {
                             TRUE ~ NA_real_),
            age_child = case_when(AYFL19 <= 2 ~ "2 yrs or less", #age of youngest child
                                  between(AYFL19,3,4) ~ "3-4 yrs",
-                                 AYFL19 > 4 ~ "More then 4 yrs")) 
+                                 AYFL19 > 4 ~ "More then 4 yrs"),
+           num_children = FDPCH16,
+           #levquals = !!sym(quals_var)
+           ) 
   
   
   

@@ -2,6 +2,13 @@
 # LOAD STANDARD PACKAGES ----
 #_______________________________________________________________________________
 
+# The code below can be used to download all packages first
+# 
+# install.packages(c("here","remotes","knitr","tidyverse","lubridate","scales",
+#                    "ggplot2","ggthemes","nomisr","devtools","gglaplot","data.table",
+#                    "janitor","ggrepel","plotly","leaflet","leafsync","rgdal","httr",
+#                    "flextable","officer","extrafont","svDialogs","sf","reactable",
+#                    "openxlsx","haven","survey","sjlabelled","jtools","huxtable","crayon","sjPlot"))
 
 library("here") # To set project folder dynamically
 library("remotes") # Makes it possible to load github package where necesary
@@ -36,6 +43,7 @@ library("jtools") # For outputting nice regression tables
 library("huxtable") # outputting regression into excel
 library("crayon") # for displaying texts in loops
 library("sjPlot") # to generate overviews of labelled data
+library("broom.mixed") # for coefficient plotting
 
 # The below are needed to install GLA packages the first time it is runs
 #devtools::install_github("Greater-London-Authority/gglaplot")
