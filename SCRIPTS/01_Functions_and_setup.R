@@ -154,9 +154,10 @@ recode_dta <- function(dta=NA) {
            pt_d = case_when(FTPT %in% c(1,3) ~ 0, #if working full-time
                             FTPT %in% c(2,4) ~ 1, #working part time
                             TRUE ~ NA_real_),
-           age_child = case_when(AYFL19 <= 2 ~ "2 yrs or less", #age of youngest child
+           child_age = case_when(AYFL19 <= 2 ~ "2 yrs or less", #age of youngest child
                                  between(AYFL19,3,4) ~ "3-4 yrs",
-                                 AYFL19 > 4 ~ "More then 4 yrs"),
+                                 between(AYFL19,5,18) ~ "4-18 yrs",
+                                 TRUE ~ NA_character_),
            num_children = FDPCH16,
            #levquals = !!sym(quals_var)
            ) 

@@ -21,15 +21,15 @@
 #                        "s*L + eth" =c("parent*london_resident*SEX_label","ethnicity"),
 #                        "s*L + a + e" =c("parent*london_resident*SEX_label","ethnicity","age_group"),
 #                        "** + child age"=c("parent*london_resident*SEX_label","ethnicity","age_group",
-#                                            "age_child"),
+#                                            "child_age"),
 #                        "** + famtype"=c("parent*london_resident*SEX_label","ethnicity","age_group",
-#                                         "age_child","famtype"),
+#                                         "child_age","famtype"),
 #                        "** + religion"=c("parent*london_resident*SEX_label","ethnicity","age_group",
-#                                         "age_child","famtype","RELIG11_label"),
-#                        "** + health"=c("parent*london_resident*SEX_label","ethnicity","age_group",
-#                                          "age_child","famtype","LIMITK_label"),
+#                                         "child_age","famtype","RELIG11_label"),
+#                        "** + disability"=c("parent*london_resident*SEX_label","ethnicity","age_group",
+#                                          "child_age","famtype","DISEA_label"),
 #                        "** + num_child"=c("parent*london_resident*SEX_label","ethnicity","age_group",
-#                                           "age_child","famtype","num_children"))
+#                                           "child_age","famtype","num_children"))
 
 # Simpler models for investigating female London parental gap
 reg_model_vars <- list("uk_wide"=c("parent"),
@@ -38,11 +38,14 @@ reg_model_vars <- list("uk_wide"=c("parent"),
                        "regions"=c("parent","london_resident","manchester_resident","birmingham_resident"),
                        "** + age" =c("parent*london_resident","age_group"),
                        "** + eth" =c("parent*london_resident","ethnicity"),
-                       "** + child age" =c("parent*london_resident","age_child"),
+                       "** + child age" =c("parent*london_resident","child_age"),
                        "** + famtype" =c("parent*london_resident","famtype"),
                        "** + religion" =c("parent*london_resident","RELIG11_label"),
-                       "** + health" =c("parent*london_resident","LIMITK_label"),
-                       "** + num_children" =c("parent*london_resident","num_children"))
+                       "** + disability" =c("parent*london_resident","DISEA_label"),
+                       "** + num_children" =c("parent*london_resident","num_children"),
+                       "full" =c("parent*london_resident","age_group","ethnicity","famtype","RELIG11_label","num_children","DISEA_label"),
+                       "full + regions" = c("parent*london_resident","parent*manchester_resident","parent*birmingham_resident","age_group","ethnicity",
+                                            "famtype","RELIG11_label","num_children","DISEA_label"))
 
 # Create empty list to store results
 num_reg_models <- length(reg_model_vars)
@@ -54,7 +57,8 @@ reg_emp_results <- setNames(vector("list", num_reg_models),names(reg_model_vars)
 survey_2022_reg_data <- update(survey_design_adults[["lfsh_aj22"]],
                                age_group = relevel(factor(age_group),"Aged 25-34"),
                                ethnicity = relevel(factor(ethnicity),"White"),
-                               LIMITK_label = relevel(factor(LIMITK_label),"No")) %>% 
+                               child_age = relevel(factor(child_age),"More then 4 yrs"),
+                               DISEA_label = relevel(factor(DISEA_label),"Not Equality Act Disabled")) %>% 
   subset(SEX_label=="Female")
 
 # We will only regress the 2022 data for simplicity
@@ -90,12 +94,12 @@ export_summs(reg_emp_results,
 reg_models_single <- list(reg_emp_results[["Main simple (**)"]],
                    reg_emp_results[["** + age"]],reg_emp_results[["** + eth"]],
                    reg_emp_results[["** + child age"]],
-                   reg_emp_results[["** + famtype"]],reg_emp_results[["** + health"]],
+                   reg_emp_results[["** + famtype"]],reg_emp_results[["** + disability"]],
                    reg_emp_results[["** + num_children"]])
 
 reg_models_names_single <- c("1: London parents","2: [1] + age",
                       "3: [1] + ethnicity", "4: [1] + child age","5: [1] + famtype",
-                      "6: [1] + work limiting","7: [1] + #children")
+                      "6: [1] + disability","7: [1] + #children")
 
 # coef_vector_main <- c("Parent"="parent",
 #                  "Female parent Londoner"="parent:london_resident:SEX_labelFemale",
