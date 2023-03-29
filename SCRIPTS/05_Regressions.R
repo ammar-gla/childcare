@@ -11,7 +11,7 @@
 ## Note: the format X*Y means the formula includes X+Y+X:Y where the latter is interacted
 
 # ACTION: choose to regress on female-only data or female-parent-only data
-fem_parent_only <- FALSE
+fem_parent_only <- TRUE
 
 
 if (fem_parent_only==TRUE) {
@@ -101,22 +101,31 @@ export_summs(reg_emp_results_region,
 ## The models to include
 reg_models_single <- list(reg_emp_results[["Main simple (**)"]],
                    reg_emp_results[["** + age"]],reg_emp_results[["** + eth"]],
-                   reg_emp_results[["** + child age"]],
                    reg_emp_results[["** + famtype"]],reg_emp_results[["** + disability"]],
-                   reg_emp_results[["** + num_children"]])
+                   reg_emp_results[["** + num_children"]],reg_emp_results[["** + religion"]],reg_emp_results[["full"]])
 
-reg_models_names_single <- c("1: London parents","2: [1] + age",
-                      "3: [1] + ethnicity", "4: [1] + child age","5: [1] + famtype",
-                      "6: [1] + disability","7: [1] + #children")
+# reg_models_names_single <- c("1: London parents","2: [1] + age",
+#                       "3: [1] + ethnicity", "4: [1] + child age","5: [1] + famtype",
+#                       "6: [1] + disability","7: [1] + #children")
 
+reg_models_names_single <- c("1: Baseline","2: [1] + age",
+                             "3: [1] + ethnicity", "4: [1] + famtype",
+                             "5: [1] + disability","6: [1] + #children",
+                             "7: [1] + religion","8: Full model")
 
-coef_vector_clean <- c("Parent"="parent",
-                      "Londoner"="london_resident",
-                      "Parent Londoner"="parent:london_resident")
+coef_plot_colors <- gla_pal(n=length(reg_models_names_single))
+
+if (fem_parent_only==TRUE) {
+  coef_vector_clean <- c("Londoner"="london_resident")
+  
+} else {
+  coef_vector_clean <- c("Parent Londoner"="parent:london_resident")
+}
 
 coef_plot_single <- plot_summs(reg_models_single,
                              model.names = reg_models_names_single,
-                             coefs=coef_vector_clean)
+                             coefs=coef_vector_clean,
+                             colors = coef_plot_colors)
 
 save_GLA_plot("coef_plot_single")
 
