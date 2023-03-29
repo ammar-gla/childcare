@@ -431,3 +431,26 @@ delist_results <- function(list_nm = NULL,
   return(new_df)
 }
 
+# Function to produce regression results based on model of variables input
+svyglm_regress <- function(reg_model_vars=NULL,
+                           design=NULL,
+                           region_dummies=FALSE) {
+  
+  if (region_dummies==TRUE) { # Do same regressions adding other regions for interest
+    
+    # Construct a formula object
+    reg_form <- formula_helper(outcome_var = "employed",
+                                      formula_vars = c(reg_model_vars,"manchester_resident","birmingham_resident"))
+    
+  } else {
+    
+    # Construct a formula object
+    reg_form <- formula_helper(outcome_var = "employed",
+                               formula_vars = reg_model_vars)
+    }
+  
+  reg_emp_results <- svyglm(design=design,
+                            formula = reg_form)
+  
+  return(reg_emp_results)
+}
