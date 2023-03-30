@@ -64,6 +64,8 @@ if (fem_parent_only==TRUE) {
   
 }
 
+# Note: religion is not available for N. Ireland
+
 # Create empty list to store results
 num_reg_models <- length(reg_model_vars)
 reg_emp_results <- setNames(vector("list", num_reg_models),names(reg_model_vars))
