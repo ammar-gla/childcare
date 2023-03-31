@@ -7,8 +7,7 @@
 #..............................................................................
 
 # Export into workbook with formatted sheets
-## If running on whole population or parents
-whole_pop_output <- TRUE
+
 
 if (whole_pop_output==TRUE) {
   wbname <- "Overall labour market rates.xlsx"

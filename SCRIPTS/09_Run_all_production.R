@@ -11,6 +11,8 @@
   # HERE package needed for dynamic pathfinding
   library("here") 
   
+  ## If running on whole population or parents, should generally be FALSE
+  whole_pop_output <- FALSE
 
 #...............................................................................
 #### Run LMU scripts ----

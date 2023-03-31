@@ -11,9 +11,7 @@ import_save_dta <- function(dta_num=NA,
                             aps_lfs=NA,
                             loadRDS=FALSE,
                             sav_dat=TRUE,
-                            dataset_nm_vector=NULL,
-                            overall_parent=FALSE) #in case we want sumstats on whole pop
-  {
+                            dataset_nm_vector=NULL) {
   
   
   checkmate::assert_choice(str_to_lower(aps_lfs), choices = c("aps","lfs"))
@@ -75,14 +73,16 @@ import_save_dta <- function(dta_num=NA,
 }
 
 # Function to adjust the data for our use, inspired by previous SPS code
-recode_dta <- function(dta=NA) {
+recode_dta <- function(dta=NA,
+                       overall_parent=whole_pop_output) #in case we want sumstats on whole pop {
   
+{
   # Check year and set SOC var accordingly
   dta_year_check <- dta %>% 
     group_by(dta_year) %>% 
     filter(row_number()==1) %>% 
     pull(dta_year)
-
+  
   if (dta_year_check>2020) soc_var <- "SOC20M" else soc_var <- "SOC10M"  # for detailed occ
   
   # if (dta_year_check>=2022) {
@@ -111,7 +111,7 @@ recode_dta <- function(dta=NA) {
            employed=case_when(ILODEFR==1 ~ 1,
                               TRUE ~ 0),
            unemployed=case_when(ILODEFR==2 ~ 1,
-                              TRUE ~ 0),
+                                TRUE ~ 0),
            inactive=case_when(ILODEFR==3 ~ 1,
                               TRUE ~ 0),
            econ_active=case_when(ILODEFR %in% c(1,2) ~ 1,
@@ -119,7 +119,7 @@ recode_dta <- function(dta=NA) {
            adult = case_when(AGE>=16 ~ 1,
                              TRUE ~ 0),
            adult1664 = case_when(between(AGE,16,64) ~ 1,
-                             TRUE ~ 0),
+                                 TRUE ~ 0),
            london_resident = case_when(GOVTOF == 8 ~ 1,
                                        TRUE ~ 0),
            manchester_resident = case_when(GOVTOR == 3 ~ 1,
@@ -169,7 +169,7 @@ recode_dta <- function(dta=NA) {
            disability = case_when(DISEA == 2 | is.na(DISEA) ~ "Not disabled",
                                   DISEA == 1 ~ "Disabled")
            #levquals = !!sym(quals_var)
-           ) 
+    ) 
   
   # If not wanting to use parent as by-var, change all to 0
   if (overall_parent==TRUE) {
