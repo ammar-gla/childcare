@@ -35,11 +35,11 @@
   
   source(paste0(SCRIPTS,"03_Setup",".r"))
   
-  #source(paste0(SCRIPTS,"04_Sumstats",".r"))
+  source(paste0(SCRIPTS,"04_Sumstats",".r"))
   
   source(paste0(SCRIPTS,"05_Regressions",".r"))
   
-  #source(paste0(SCRIPTS,"06_Output",".r"))
+  source(paste0(SCRIPTS,"06_Output",".r"))
 
   
   

@@ -14,6 +14,14 @@
 fem_parent_only <- TRUE
 
 
+survey_2022_reg_data <- update(survey_design_adults[["lfsh_aj22"]],
+                               age_group = relevel(factor(age_group),"Aged 25-34"),
+                               ethnicity = relevel(factor(ethnicity),"White"),
+                               child_age = relevel(factor(child_age),"4-18 yrs"),
+                               disability = relevel(factor(disability),"Not disabled"),
+                               num_children = relevel(factor(num_children),"1 child")) %>% 
+  subset(!is.na(RELIG11_label)) #removing N. Ireland
+
 if (fem_parent_only==TRUE) {
   
   reg_model_vars <- list("Main simple (**)"=c("london_resident"),
@@ -22,18 +30,14 @@ if (fem_parent_only==TRUE) {
                          "** + child age" =c("london_resident","child_age"),
                          "** + famtype" =c("london_resident","famtype"),
                          "** + religion" =c("london_resident","RELIG11_label"),
-                         "** + disability" =c("london_resident","DISEA_label"),
+                         "** + disability" =c("london_resident","disability"),
                          "** + num_children" =c("london_resident","num_children"),
-                         "full" =c("london_resident","age_group","ethnicity","famtype",
-                                   "RELIG11_label","num_children","DISEA_label"))
+                         "full" =c("london_resident","age_group","ethnicity","child_age","famtype",
+                                   "RELIG11_label","num_children","disability"))
   
   # Re-level some of the categorical variables to use as baseline in regressions
   # Restrict the data to only women & parents to make regressions simpler
-  survey_2022_reg_data <- update(survey_design_adults[["lfsh_aj22"]],
-                                 age_group = relevel(factor(age_group),"Aged 25-34"),
-                                 ethnicity = relevel(factor(ethnicity),"White"),
-                                 child_age = relevel(factor(child_age),"4-18 yrs"),
-                                 DISEA_label = relevel(factor(DISEA_label),"Not Equality Act Disabled")) %>% 
+  survey_2022_reg_data <- survey_2022_reg_data %>% 
     subset(SEX_label=="Female" & parent==1)
   
 } else {
@@ -49,22 +53,16 @@ if (fem_parent_only==TRUE) {
                          "** + famtype" =c("parent*london_resident","famtype"),
                          "** + religion" =c("parent*london_resident","RELIG11_label"),
                          "** + religion interact" =c("parent*london_resident","RELIG11_label*parent"),
-                         "** + disability" =c("parent*london_resident","DISEA_label"),
+                         "** + disability" =c("parent*london_resident","disability"),
                          "** + num_children" =c("parent*london_resident","num_children"),
                          "full" =c("parent*london_resident","age_group","ethnicity","famtype",
-                                   "RELIG11_label","num_children","DISEA_label"))
+                                   "RELIG11_label","num_children","disability"))
   
   # Restrict the data to only women to make regressions simpler
-  survey_2022_reg_data <- update(survey_design_adults[["lfsh_aj22"]],
-                                 age_group = relevel(factor(age_group),"Aged 25-34"),
-                                 ethnicity = relevel(factor(ethnicity),"White"),
-                                 child_age = relevel(factor(child_age),"4-18 yrs"),
-                                 DISEA_label = relevel(factor(DISEA_label),"Not Equality Act Disabled")) %>% 
+  survey_2022_reg_data <- survey_2022_reg_data %>% 
     subset(SEX_label=="Female")
   
 }
-
-# Note: religion is not available for N. Ireland
 
 # Create empty list to store results
 num_reg_models <- length(reg_model_vars)
@@ -90,11 +88,15 @@ reg_emp_results_region <- lapply(reg_model_vars,
 # Export regression output to Excel
 export_summs(reg_emp_results,
              to.file = "xlsx",
+             error_format = "CI [{conf.low}, {conf.high}]",
+             ci_level = 0.90,
              number_format = "%.4g",
              file.name = paste0(DATA_OUT,"Regression output 2022.xlsx"))
 
 export_summs(reg_emp_results_region,
              to.file = "xlsx",
+             error_format = "CI [{conf.low}, {conf.high}]",
+             ci_level = 0.90,
              number_format = "%.4g",
              file.name = paste0(DATA_OUT,"Regression output REGIONS 2022.xlsx"))
 

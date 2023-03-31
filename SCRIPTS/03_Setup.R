@@ -8,11 +8,11 @@
 
 
 # Define which variables to keep for analysis to save memory - and vars to transform to labels
-label_var_vec <- c("SEX","GOVTOF","ILODEFR","BENFTS","INDS07M","DISEA",
+label_var_vec <- c("SEX","GOVTOF","ILODEFR","BENFTS","INDS07M",
                    "RELIG11")
 analysis_var_vec <- c("parent","fam_id","AGE","adult1664","weight_val",
                       "HSERIALP","employed","london_resident","manchester_resident","birmingham_resident",
-                      "inactive","unemployed",
+                      "inactive","unemployed","disability",
                       "age_group","famtype","wfh_d","child_age","ethnicity","pt_d","num_children")
 
 # Replace variables with their value labels, then remove all value labels from the datasets to allow easy mutation of variables
@@ -22,7 +22,7 @@ dataset_list_adj <- lapply(dataset_list,convert_to_label,var_vec=label_var_vec) 
   lapply(select,c(analysis_var_vec,paste(label_var_vec,"_label",sep="")))
 
 # To save space, remove original dataset list
-rm(dataset_list)
+#rm(dataset_list)
 
 #.............................................................................
 #### Build survey design ----
