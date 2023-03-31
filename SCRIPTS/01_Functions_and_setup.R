@@ -103,9 +103,9 @@ recode_dta <- function(dta=NA) {
            # occ_job = floor(!!sym(soc_var)/1000), # forcing a one-digit SOC code
            # occ_job_two = floor(!!sym(soc_var)/100), # forcing a two-digit SOC code 
            fam_id = as.numeric(HSERIALP) *100 + FAMUNIT, #unique identifier for each family unit, ONLY EXISTS IN LFS!
-           # parent = case_when(RELHFU %in% c(1,2) & FDPCH19>0 ~ 1,
-           #                    TRUE ~ 0),
-           parent = 0,
+           parent = case_when(RELHFU %in% c(1,2) & FDPCH19>0 ~ 1,
+                              TRUE ~ 0),
+           #parent = 0,
            employed=case_when(ILODEFR==1 ~ 1,
                               TRUE ~ 0),
            unemployed=case_when(ILODEFR==2 ~ 1,
