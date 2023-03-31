@@ -105,9 +105,8 @@ recode_dta <- function(dta=NA,
            # occ_job = floor(!!sym(soc_var)/1000), # forcing a one-digit SOC code
            # occ_job_two = floor(!!sym(soc_var)/100), # forcing a two-digit SOC code 
            fam_id = as.numeric(HSERIALP) *100 + FAMUNIT, #unique identifier for each family unit, ONLY EXISTS IN LFS!
-           # parent = case_when(RELHFU %in% c(1,2) & FDPCH19>0 ~ 1,
-           #                    TRUE ~ 0),
-           parent = 0,
+           parent = case_when(RELHFU %in% c(1,2) & FDPCH19>0 ~ 1,
+                               TRUE ~ 0),
            employed=case_when(ILODEFR==1 ~ 1,
                               TRUE ~ 0),
            unemployed=case_when(ILODEFR==2 ~ 1,
@@ -159,13 +158,13 @@ recode_dta <- function(dta=NA,
                             TRUE ~ NA_real_),
            child_age = case_when(AYFL19 <= 2 ~ "2 yrs or less", #age of youngest child
                                  between(AYFL19,3,4) ~ "3-4 yrs",
-                                 between(AYFL19,5,18) ~ "4-18 yrs",
+                                 between(AYFL19,5,18) ~ "5-18 yrs",
                                  TRUE ~ "No children"),
            num_children = case_when(FDPCH19 == 0 ~ "0 children",
                                     FDPCH19 == 1 ~ "1 child",
                                     FDPCH19 == 2 ~ "2 children",
-                                    FDPCH19 > 3 & !is.na(FDPCH19) ~ "3+ children",
-                                    TRUE ~  "No children"),
+                                    FDPCH19 >= 3 & !is.na(FDPCH19) ~ "3+ children",
+                                    TRUE ~  "0 children"),
            disability = case_when(DISEA == 2 | is.na(DISEA) ~ "Not disabled",
                                   DISEA == 1 ~ "Disabled")
            #levquals = !!sym(quals_var)
