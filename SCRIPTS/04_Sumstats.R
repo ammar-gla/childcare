@@ -26,7 +26,8 @@ analysis_byvars <- list("all" = c(),
                         "sex.age" = c("SEX_label","age_group"),
                         "sex.famtype" = c("SEX_label","famtype"),
                         "sex.age" = c("SEX_label","age_group"),
-                        "industry"=c("INDS07M_label"))
+                        "religion"=c("RELIG11_label"),
+                        "disability"=c("disability"))
 
 # Find number of models to initialise list sizes
 num_models <- length(analysis_byvars)

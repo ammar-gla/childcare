@@ -7,7 +7,15 @@
 #..............................................................................
 
 # Export into workbook with formatted sheets
-wbname <- "Parental labour market rates.xlsx"
+## If running on whole population or parents
+whole_pop_output <- TRUE
+
+if (whole_pop_output==TRUE) {
+  wbname <- "Overall labour market rates.xlsx"
+} else {
+  wbname <- "Parental labour market rates.xlsx"
+}
+
 wb <- loadWorkbook(paste0(DATA_OUT,wbname))
 
 data_sheets <- c("lf_rates_data","empl_stats")
