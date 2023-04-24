@@ -9,6 +9,7 @@ _old/
 /INTERMEDIATE/RDATA/*
 /INPUT/*
 /previous_work/*
+/SCRIPTS/xx*
 
 !/OUTPUT/IMAGES/MAIN/.gitkeep
 !/OUTPUT/IMAGES/AD_HOC/.gitkeep
