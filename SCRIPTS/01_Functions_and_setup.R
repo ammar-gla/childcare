@@ -73,7 +73,9 @@ import_save_dta <- function(dta_num=NA,
 }
 
 # Function to adjust the data for our use, inspired by previous SPS code
-recode_dta <- function(dta=NA) {
+recode_dta <- function(dta=NA,
+                       overall_parent=whole_pop_output) #in case we want sumstats on whole pop {
+   {
   
   # Check year and set SOC var accordingly
   dta_year_check <- dta %>% 
@@ -152,16 +154,29 @@ recode_dta <- function(dta=NA) {
                             TRUE ~ NA_real_),
            child_age = case_when(AYFL19 <= 2 ~ "2 yrs or less", #age of youngest child
                                  between(AYFL19,3,4) ~ "3-4 yrs",
-                                 between(AYFL19,5,18) ~ "4-18 yrs",
-                                 TRUE ~ NA_character_),
-           num_children = FDPCH16
+                                 between(AYFL19,5,18) ~ "5-18 yrs",
+                                 TRUE ~ "No children"),
+           num_children = case_when(FDPCH19 == 0 ~ "0 children",
+                                    FDPCH19 == 1 ~ "1 child",
+                                    FDPCH19 == 2 ~ "2 children",
+                                    FDPCH19 >= 3 & !is.na(FDPCH19) ~ "3+ children",
+                                    TRUE ~  "0 children"),
+           disability = case_when(DISEA == 2 | is.na(DISEA) ~ "Not disabled",
+                                  DISEA == 1 ~ "Disabled")
            ) 
   
+  # If not wanting to use parent as by-var, change all to 0
+  if (overall_parent==TRUE) {
+    dta_adj <- dta_adj %>% 
+      mutate(parent=0)
+  }
   
   
   return(dta_adj)
   
 }
+
+
 
 # Duplicate the rows to have a UK total in addition to London and RoUK
 dup_dataset <- function(dta=NA) {
@@ -169,6 +184,15 @@ dup_dataset <- function(dta=NA) {
     uncount(2, .id="row_version") %>% 
     mutate(london_resident = case_when(row_version == 2 ~ 2,
                                        TRUE ~ london_resident))
+  
+  return(dup_dta)
+}
+
+dup_dataset_parent <- function(dta=NA) {
+  dup_dta <- dta %>% 
+    uncount(2, .id="row_version") %>% 
+    mutate(parent = case_when(row_version == 2 ~ 2,
+                              TRUE ~ parent))
   
   return(dup_dta)
 }
