@@ -75,14 +75,18 @@ import_save_dta <- function(dta_num=NA,
 # Function to adjust the data for our use, inspired by previous SPS code
 recode_dta <- function(dta=NA,
                        overall_parent=whole_pop_output) #in case we want sumstats on whole pop {
+<<<<<<< HEAD
    {
+=======
+>>>>>>> make_output
   
+{
   # Check year and set SOC var accordingly
   dta_year_check <- dta %>% 
     group_by(dta_year) %>% 
     filter(row_number()==1) %>% 
     pull(dta_year)
-
+  
   if (dta_year_check>2020) soc_var <- "SOC20M" else soc_var <- "SOC10M"  # for detailed occ
   
 
@@ -102,11 +106,11 @@ recode_dta <- function(dta=NA,
            # occ_job_two = floor(!!sym(soc_var)/100), # forcing a two-digit SOC code 
            fam_id = as.numeric(HSERIALP) *100 + FAMUNIT, #unique identifier for each family unit, ONLY EXISTS IN LFS!
            parent = case_when(RELHFU %in% c(1,2) & FDPCH19>0 ~ 1,
-                              TRUE ~ 0),
+                               TRUE ~ 0),
            employed=case_when(ILODEFR==1 ~ 1,
                               TRUE ~ 0),
            unemployed=case_when(ILODEFR==2 ~ 1,
-                              TRUE ~ 0),
+                                TRUE ~ 0),
            inactive=case_when(ILODEFR==3 ~ 1,
                               TRUE ~ 0),
            econ_active=case_when(ILODEFR %in% c(1,2) ~ 1,
@@ -114,7 +118,7 @@ recode_dta <- function(dta=NA,
            adult = case_when(AGE>=16 ~ 1,
                              TRUE ~ 0),
            adult1664 = case_when(between(AGE,16,64) ~ 1,
-                             TRUE ~ 0),
+                                 TRUE ~ 0),
            london_resident = case_when(GOVTOF == 8 ~ 1,
                                        TRUE ~ 0),
            manchester_resident = case_when(GOVTOR == 3 ~ 1,
@@ -163,7 +167,12 @@ recode_dta <- function(dta=NA,
                                     TRUE ~  "0 children"),
            disability = case_when(DISEA == 2 | is.na(DISEA) ~ "Not disabled",
                                   DISEA == 1 ~ "Disabled")
+<<<<<<< HEAD
            ) 
+=======
+           #levquals = !!sym(quals_var)
+    ) 
+>>>>>>> make_output
   
   # If not wanting to use parent as by-var, change all to 0
   if (overall_parent==TRUE) {
@@ -192,7 +201,11 @@ dup_dataset_parent <- function(dta=NA) {
   dup_dta <- dta %>% 
     uncount(2, .id="row_version") %>% 
     mutate(parent = case_when(row_version == 2 ~ 2,
+<<<<<<< HEAD
                               TRUE ~ parent))
+=======
+                                       TRUE ~ parent))
+>>>>>>> make_output
   
   return(dup_dta)
 }

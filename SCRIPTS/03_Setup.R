@@ -9,7 +9,11 @@
 
 # Define which variables to keep for analysis to save memory - and vars to transform to labels
 label_var_vec <- c("SEX","GOVTOF","ILODEFR","BENFTS","INDS07M",
+<<<<<<< HEAD
                    "lev_quals","RELIG11")
+=======
+                   "RELIG11")
+>>>>>>> make_output
 analysis_var_vec <- c("parent","fam_id","AGE","adult1664","weight_val",
                       "HSERIALP","employed","london_resident","manchester_resident","birmingham_resident",
                       "inactive","unemployed","disability",
