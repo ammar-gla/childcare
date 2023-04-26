@@ -75,6 +75,10 @@ import_save_dta <- function(dta_num=NA,
 # Function to adjust the data for our use, inspired by previous SPS code
 recode_dta <- function(dta=NA,
                        overall_parent=whole_pop_output) #in case we want sumstats on whole pop {
+<<<<<<< HEAD
+   {
+=======
+>>>>>>> make_output
   
 {
   # Check year and set SOC var accordingly
@@ -85,11 +89,7 @@ recode_dta <- function(dta=NA,
   
   if (dta_year_check>2020) soc_var <- "SOC20M" else soc_var <- "SOC10M"  # for detailed occ
   
-  # if (dta_year_check>=2022) {
-  #   quals_var <- LEVQUL22_label
-  # } else if (between(dta_year_check,2015,2021)) {
-  #   quals_var <- LEVQUL15_label
-  # }
+
   
   # Change data
   dta_adj <- dta %>% 
@@ -167,8 +167,12 @@ recode_dta <- function(dta=NA,
                                     TRUE ~  "0 children"),
            disability = case_when(DISEA == 2 | is.na(DISEA) ~ "Not disabled",
                                   DISEA == 1 ~ "Disabled")
+<<<<<<< HEAD
+           ) 
+=======
            #levquals = !!sym(quals_var)
     ) 
+>>>>>>> make_output
   
   # If not wanting to use parent as by-var, change all to 0
   if (overall_parent==TRUE) {
@@ -180,6 +184,8 @@ recode_dta <- function(dta=NA,
   return(dta_adj)
   
 }
+
+
 
 # Duplicate the rows to have a UK total in addition to London and RoUK
 dup_dataset <- function(dta=NA) {
@@ -195,7 +201,11 @@ dup_dataset_parent <- function(dta=NA) {
   dup_dta <- dta %>% 
     uncount(2, .id="row_version") %>% 
     mutate(parent = case_when(row_version == 2 ~ 2,
+<<<<<<< HEAD
+                              TRUE ~ parent))
+=======
                                        TRUE ~ parent))
+>>>>>>> make_output
   
   return(dup_dta)
 }
@@ -360,6 +370,25 @@ convert_to_label <- function(dta=NULL,
   return(dta_convert)
 }
 
+# Make consistent ariables that vary across years
+align_vars <- function(dta=NULL){
+  
+  dta_year_check <- dta %>% 
+    group_by(dta_year) %>% 
+    filter(row_number()==1) %>% 
+    pull(dta_year)
+  
+  if (dta_year_check>=2022) {
+    quals_var <- "HIQUL22D"
+  } else if (between(dta_year_check,2015,2021)) {
+    quals_var <- "HIQUL15D"
+  }
+  
+  dta_convert <- dta %>% 
+    mutate(lev_quals = !!sym(quals_var))
+  
+  return(dta_convert)
+}
 
 # Collapse data to summarise by demography, using weights
 collapse_func_ILO <- function(dta=NULL,
