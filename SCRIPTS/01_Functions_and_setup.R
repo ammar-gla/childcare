@@ -83,11 +83,7 @@ recode_dta <- function(dta=NA) {
 
   if (dta_year_check>2020) soc_var <- "SOC20M" else soc_var <- "SOC10M"  # for detailed occ
   
-  # if (dta_year_check>=2022) {
-  #   quals_var <- LEVQUL22_label
-  # } else if (between(dta_year_check,2015,2021)) {
-  #   quals_var <- LEVQUL15_label
-  # }
+
   
   # Change data
   dta_adj <- dta %>% 
@@ -158,8 +154,7 @@ recode_dta <- function(dta=NA) {
                                  between(AYFL19,3,4) ~ "3-4 yrs",
                                  between(AYFL19,5,18) ~ "4-18 yrs",
                                  TRUE ~ NA_character_),
-           num_children = FDPCH16,
-           #levquals = !!sym(quals_var)
+           num_children = FDPCH16
            ) 
   
   
@@ -338,6 +333,25 @@ convert_to_label <- function(dta=NULL,
   return(dta_convert)
 }
 
+# Make consistent ariables that vary across years
+align_vars <- function(dta=NULL){
+  
+  dta_year_check <- dta %>% 
+    group_by(dta_year) %>% 
+    filter(row_number()==1) %>% 
+    pull(dta_year)
+  
+  if (dta_year_check>=2022) {
+    quals_var <- "HIQUL22D"
+  } else if (between(dta_year_check,2015,2021)) {
+    quals_var <- "HIQUL15D"
+  }
+  
+  dta_convert <- dta %>% 
+    mutate(lev_quals = !!sym(quals_var))
+  
+  return(dta_convert)
+}
 
 # Collapse data to summarise by demography, using weights
 collapse_func_ILO <- function(dta=NULL,

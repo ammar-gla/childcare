@@ -24,8 +24,9 @@ if (fem_parent_only==TRUE) {
                          "** + religion" =c("london_resident","RELIG11_label"),
                          "** + disability" =c("london_resident","DISEA_label"),
                          "** + num_children" =c("london_resident","num_children"),
+                         "** + lev_quals" =c("london_resident","lev_quals_label"),
                          "full" =c("london_resident","age_group","ethnicity","famtype",
-                                   "RELIG11_label","num_children","DISEA_label"))
+                                   "RELIG11_label","num_children","DISEA_label","lev_quals_label"))
   
   # Re-level some of the categorical variables to use as baseline in regressions
   # Restrict the data to only women & parents to make regressions simpler
@@ -33,8 +34,9 @@ if (fem_parent_only==TRUE) {
                                  age_group = relevel(factor(age_group),"Aged 25-34"),
                                  ethnicity = relevel(factor(ethnicity),"White"),
                                  child_age = relevel(factor(child_age),"4-18 yrs"),
-                                 DISEA_label = relevel(factor(DISEA_label),"Not Equality Act Disabled")) %>% 
-    subset(SEX_label=="Female" & parent==1)
+                                 DISEA_label = relevel(factor(DISEA_label),"Not Equality Act Disabled"),
+                                 lev_quals_label = relevel(factor(lev_quals_label),"No Qualifications")) %>% 
+    subset(SEX_label=="Female" & parent==1 & !is.na(reg_model_vars$full)) 
   
 } else {
   
@@ -51,15 +53,17 @@ if (fem_parent_only==TRUE) {
                          "** + religion interact" =c("parent*london_resident","RELIG11_label*parent"),
                          "** + disability" =c("parent*london_resident","DISEA_label"),
                          "** + num_children" =c("parent*london_resident","num_children"),
+                         "** + lev_quals" =c("london_resident","lev_quals_label"),
                          "full" =c("parent*london_resident","age_group","ethnicity","famtype",
-                                   "RELIG11_label","num_children","DISEA_label"))
+                                   "RELIG11_label","num_children","DISEA_label","lev_quals_label"))
   
   # Restrict the data to only women to make regressions simpler
   survey_2022_reg_data <- update(survey_design_adults[["lfsh_aj22"]],
                                  age_group = relevel(factor(age_group),"Aged 25-34"),
                                  ethnicity = relevel(factor(ethnicity),"White"),
                                  child_age = relevel(factor(child_age),"4-18 yrs"),
-                                 DISEA_label = relevel(factor(DISEA_label),"Not Equality Act Disabled")) %>% 
+                                 DISEA_label = relevel(factor(DISEA_label),"Not Equality Act Disabled"),
+                                 lev_quals_label = relevel(factor(lev_quals_label),"No Qualifications")) %>% 
     subset(SEX_label=="Female")
   
 }
@@ -88,12 +92,12 @@ reg_emp_results_region <- lapply(reg_model_vars,
 # Export regression output to Excel
 export_summs(reg_emp_results,
              to.file = "xlsx",
-             number_format = "%.4g",
+             number_format = "%.3g",
              file.name = paste0(DATA_OUT,"Regression output 2022.xlsx"))
 
 export_summs(reg_emp_results_region,
              to.file = "xlsx",
-             number_format = "%.4g",
+             number_format = "%.3g",
              file.name = paste0(DATA_OUT,"Regression output REGIONS 2022.xlsx"))
 
 

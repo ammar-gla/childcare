@@ -70,6 +70,7 @@ df_labels <- bind_rows(l_df, .id = "dta_year") %>%
 
 # Create overview HTMLs of the datasets
 sjPlot::view_df(lfsh_aj22,show.prc = T, file = paste0(OTHERDATA,"LFS_overview_labels_2022.html"))
+sjPlot::view_df(lfsh_aj18,show.prc = T, file = paste0(OTHERDATA,"LFS_overview_labels_2018.html"))
 
 # Remove individual datasets to save memory
 rm(list=dataset_nm)
