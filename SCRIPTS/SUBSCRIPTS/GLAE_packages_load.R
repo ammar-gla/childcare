@@ -4,11 +4,16 @@
 
 # The code below can be used to download all packages first
 # 
-# install.packages(c("here","remotes","knitr","tidyverse","lubridate","scales",
+# install.packages(c("here","devtools","remotes","knitr","tidyverse","lubridate","scales",
 #                    "ggplot2","ggthemes","nomisr","devtools","gglaplot","data.table",
 #                    "janitor","ggrepel","plotly","leaflet","leafsync","rgdal","httr",
 #                    "flextable","officer","extrafont","svDialogs","sf","reactable",
-#                    "openxlsx","haven","survey","sjlabelled","jtools","huxtable","crayon","sjPlot"))
+#                    "openxlsx","haven","survey","sjlabelled","jtools","huxtable","crayon","sjPlot",
+#                    "broom.mixed"))
+# The below are needed to install GLA packages the first time it is runs
+devtools::install_github("ammar-gla/gglaplot")
+#devtools::install_github("Greater-London-Authority/ldndatar", auth_token = "96e66bb601f49f62f0bb9bdcb73a849ece358ad1")
+#remotes::install_github("wilkelab/ggtext")
 
 library("here") # To set project folder dynamically
 library("remotes") # Makes it possible to load github package where necesary
@@ -45,7 +50,3 @@ library("crayon") # for displaying texts in loops
 library("sjPlot") # to generate overviews of labelled data
 library("broom.mixed") # for coefficient plotting
 
-# The below are needed to install GLA packages the first time it is runs
-#devtools::install_github("Greater-London-Authority/gglaplot")
-#devtools::install_github("Greater-London-Authority/ldndatar", auth_token = "96e66bb601f49f62f0bb9bdcb73a849ece358ad1")
-#remotes::install_github("wilkelab/ggtext")

@@ -20,7 +20,7 @@ all_covars <- c("london_resident","age_group","ethnicity","child_age","famtype",
 survey_2022_reg_data <- update(survey_design_adults[["lfsh_aj22"]],
                                age_group = relevel(factor(age_group),"Aged 25-34"),
                                ethnicity = relevel(factor(ethnicity),"White"),
-                               child_age = relevel(factor(child_age),"4-18 yrs"),
+                               child_age = relevel(factor(child_age),"5-18 yrs"),
                                disability = relevel(factor(disability),"Not disabled"),
                                num_children = relevel(factor(num_children),"1 child"),
                                lev_quals_label = relevel(factor(lev_quals_label),"No Qualifications")) %>% 
