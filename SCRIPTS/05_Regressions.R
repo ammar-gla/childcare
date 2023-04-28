@@ -22,12 +22,8 @@ survey_2022_reg_data <- update(survey_design_adults[["lfsh_aj22"]],
                                ethnicity = relevel(factor(ethnicity),"White"),
                                child_age = relevel(factor(child_age),"4-18 yrs"),
                                disability = relevel(factor(disability),"Not disabled"),
-<<<<<<< HEAD
                                num_children = relevel(factor(num_children),"1 child"),
                                lev_quals_label = relevel(factor(lev_quals_label),"No Qualifications")) %>% 
-=======
-                               num_children = relevel(factor(num_children),"1 child")) %>% 
->>>>>>> make_output
   subset(!is.na(RELIG11_label)) #removing N. Ireland
 
 if (fem_parent_only==TRUE) {
@@ -42,23 +38,14 @@ if (fem_parent_only==TRUE) {
                          "** + num_children" =c("london_resident","num_children"),
                          "** + age + child age"=c("london_resident","age_group","child_age"),
                          "** + eth + religion"=c("london_resident","ethnicity","RELIG11_label"),
-<<<<<<< HEAD
                          "** + lev_quals" =c("london_resident","lev_quals_label"),
                          "full" =c("london_resident","age_group","ethnicity","famtype",
                                    "RELIG11_label","num_children","disability","lev_quals_label"))
-=======
-                         "full" =c("london_resident","age_group","ethnicity","child_age","famtype",
-                                   "RELIG11_label","num_children","disability"))
->>>>>>> make_output
   
   # Re-level some of the categorical variables to use as baseline in regressions
   # Restrict the data to only women & parents to make regressions simpler
   survey_2022_reg_data <- survey_2022_reg_data %>% 
-<<<<<<< HEAD
     subset(SEX_label=="Female" & parent==1) 
-=======
-    subset(SEX_label=="Female" & parent==1)
->>>>>>> make_output
   
 } else {
   
@@ -77,11 +64,7 @@ if (fem_parent_only==TRUE) {
                          "** + num_children" =c("parent*london_resident","num_children"),
                          "** + lev_quals" =c("london_resident","lev_quals_label"),
                          "full" =c("parent*london_resident","age_group","ethnicity","famtype",
-<<<<<<< HEAD
                                    "RELIG11_label","num_children","disability","lev_quals_label"))
-=======
-                                   "RELIG11_label","num_children","disability"))
->>>>>>> make_output
   
   # Restrict the data to only women to make regressions simpler
   survey_2022_reg_data <- survey_2022_reg_data %>% 
@@ -123,17 +106,6 @@ export_summs(reg_emp_results_region,
              ci_level = 0.90,
              number_format = "%.2g",
              file.name = paste0(DATA_OUT,"Regression output REGIONS 2022.xlsx"))
-
-<<<<<<< HEAD
-# Plot coefficients on London resident on model
-## The models to include
-reg_models_single <- list(reg_emp_results[["Main simple (**)"]],
-                          reg_emp_results[["** + age"]],reg_emp_results[["** + eth"]],
-                          reg_emp_results[["** + famtype"]],reg_emp_results[["** + disability"]],
-                          reg_emp_results[["** + num_children"]],reg_emp_results[["** + religion"]],
-                          reg_emp_results[["** + eth + religion"]],reg_emp_results[["** + age + child age"]],
-                          reg_emp_results[["full"]])
-=======
 #...............................................................................
 
 # Plot coefficients on London resident on model
@@ -144,7 +116,6 @@ reg_models_single <- list(reg_emp_results[["Main simple (**)"]],
                    reg_emp_results[["** + num_children"]],reg_emp_results[["** + religion"]],
                    reg_emp_results[["** + eth + religion"]],reg_emp_results[["** + age + child age"]],
                    reg_emp_results[["full"]])
->>>>>>> make_output
 
 # The names we use to descibe models in chart
 reg_models_names_single <- c("1: Baseline","2: [1] + age",
@@ -166,7 +137,6 @@ if (fem_parent_only==TRUE) {
 # Produce the chart with only coefficient on London residents
 coef_plot_single <- plot_summs(reg_models_single,
                                ci_level = 0.90,
-<<<<<<< HEAD
                                model.names = reg_models_names_single,
                                coefs=coef_vector_clean,
                                colors = coef_plot_colors)
@@ -197,13 +167,6 @@ coef_plot_interest <- plot_summs(reg_models_interest,
                                  colors = coef_plot_colors)
 
 save_GLA_plot("coef_plot_interest",w=6,h=4)
-=======
-                             model.names = reg_models_names_single,
-                             coefs=coef_vector_clean,
-                             colors = coef_plot_colors)
-
-save_GLA_plot("coef_plot_single",w=6,h=4)
->>>>>>> make_output
 
 # Plot some coefficients of interest from full model
 reg_models_interest <- list(reg_emp_results[["full"]])

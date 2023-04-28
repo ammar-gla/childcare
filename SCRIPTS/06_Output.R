@@ -7,20 +7,12 @@
 #..............................................................................
 
 # Export into workbook with formatted sheets
-<<<<<<< HEAD
-=======
-
-
->>>>>>> make_output
 if (whole_pop_output==TRUE) {
   wbname <- "Overall labour market rates.xlsx"
 } else {
   wbname <- "Parental labour market rates.xlsx"
 }
-<<<<<<< HEAD
-=======
 
->>>>>>> make_output
 wb <- loadWorkbook(paste0(DATA_OUT,wbname))
 
 data_sheets <- c("lf_rates_data","empl_stats")
