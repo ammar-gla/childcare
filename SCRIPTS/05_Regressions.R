@@ -114,15 +114,15 @@ reg_models_single <- list(reg_emp_results[["Main simple (**)"]],
                    reg_emp_results[["** + age"]],reg_emp_results[["** + eth"]],
                    reg_emp_results[["** + famtype"]],reg_emp_results[["** + disability"]],
                    reg_emp_results[["** + num_children"]],reg_emp_results[["** + religion"]],
-                   reg_emp_results[["** + eth + religion"]],reg_emp_results[["** + age + child age"]],
+                   reg_emp_results[["** + lev_quals"]],reg_emp_results[["** + eth + religion"]],
                    reg_emp_results[["full"]])
 
 # The names we use to descibe models in chart
 reg_models_names_single <- c("1: Baseline","2: [1] + age",
                              "3: [1] + ethnicity", "4: [1] + famtype",
                              "5: [1] + disability","6: [1] + #children",
-                             "7: [1] + religion","8: [1] + eth + religion",
-                             "9: [1] + age + child age","10: Full model")
+                             "7: [1] + religion","8: [1] + qualification",
+                             "9: [1] + eth + religion","10: Full model")
 
 #GLA colors
 coef_plot_colors <- gla_pal(n=length(reg_models_names_single))
