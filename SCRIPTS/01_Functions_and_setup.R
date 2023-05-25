@@ -157,7 +157,11 @@ recode_dta <- function(dta=NA,
                                     FDPCH19 >= 3 & !is.na(FDPCH19) ~ "3+ children",
                                     TRUE ~  "0 children"),
            disability = case_when(DISEA == 2 | is.na(DISEA) ~ "Not disabled",
-                                  DISEA == 1 ~ "Disabled")
+                                  DISEA == 1 ~ "Disabled"),
+           lev_quals_label = case_when(lev_quals_label == "DK" ~ "Don't know",
+                                       lev_quals_label == "No Qualifications" ~ "No qualification",
+                                       lev_quals_label == "Other Qualifications" ~ "Other qualification",
+                                       TRUE ~ lev_quals_label)
            ) 
   
   # If not wanting to use parent as by-var, change all to 0

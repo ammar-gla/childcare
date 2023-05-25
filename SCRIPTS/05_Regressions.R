@@ -23,7 +23,7 @@ survey_2022_reg_data <- update(survey_design_adults[["lfsh_aj22"]],
                                child_age = relevel(factor(child_age),"5-18 yrs"),
                                disability = relevel(factor(disability),"Not disabled"),
                                num_children = relevel(factor(num_children),"1 child"),
-                               lev_quals_label = relevel(factor(lev_quals_label),"No Qualifications")) %>% 
+                               lev_quals_label = relevel(factor(lev_quals_label),"No qualification")) %>% 
   subset(!is.na(RELIG11_label)) #removing N. Ireland
 
 if (fem_parent_only==TRUE) {
